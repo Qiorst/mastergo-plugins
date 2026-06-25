@@ -1,0 +1,512 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Tuner</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f8;
+      --panel: #ffffff;
+      --text: #1f2328;
+      --muted: #667085;
+      --line: #d9dee7;
+      --accent: #2563eb;
+      --accent-strong: #1748b5;
+      --danger: #b42318;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 12px/1.45 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .status {
+      min-height: 34px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .status strong {
+      display: block;
+      color: var(--text);
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status.error {
+      color: var(--danger);
+      border-color: #f4c7c1;
+      background: #fff7f6;
+    }
+
+    .preview {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 190px;
+      max-height: 240px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(45deg, #e8ebef 25%, transparent 25%),
+        linear-gradient(-45deg, #e8ebef 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e8ebef 75%),
+        linear-gradient(-45deg, transparent 75%, #e8ebef 75%);
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      background-size: 16px 16px;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 238px;
+    }
+
+    .empty {
+      max-width: 280px;
+      padding: 20px;
+      color: var(--muted);
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 74px 1fr 44px;
+      align-items: center;
+      gap: 10px;
+    }
+
+    label {
+      color: var(--text);
+      font-weight: 560;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    output {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    button:hover:not(:disabled) { border-color: var(--accent); }
+    button.primary:hover:not(:disabled) { background: var(--accent-strong); }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+    .footer {
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="header">
+      <h1>Image Tuner</h1>
+      <button id="refreshButton" type="button">Refresh</button>
+    </div>
+
+    <section id="status" class="status">Select one image layer.</section>
+
+    <section class="preview">
+      <canvas id="canvas" hidden></canvas>
+      <div id="empty" class="empty">Image preview will appear here.</div>
+    </section>
+
+    <section class="controls" aria-label="Color controls">
+      <div class="control">
+        <label for="brightness">Brightness</label>
+        <input id="brightness" type="range" min="-100" max="100" value="0" />
+        <output for="brightness">0</output>
+      </div>
+      <div class="control">
+        <label for="contrast">Contrast</label>
+        <input id="contrast" type="range" min="-100" max="100" value="0" />
+        <output for="contrast">0</output>
+      </div>
+      <div class="control">
+        <label for="saturation">Saturation</label>
+        <input id="saturation" type="range" min="-100" max="100" value="0" />
+        <output for="saturation">0</output>
+      </div>
+      <div class="control">
+        <label for="hue">Hue</label>
+        <input id="hue" type="range" min="-180" max="180" value="0" />
+        <output for="hue">0</output>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button id="resetButton" type="button">Reset</button>
+      <button id="applyButton" class="primary" type="button" disabled>Apply</button>
+    </section>
+
+    <div id="debug" class="footer">UI loaded. Waiting for plugin main...</div>
+  </main>
+
+  <script>
+    const state = {
+      image: null,
+      nodeName: "",
+      mode: "none",
+      values: { brightness: 0, contrast: 0, saturation: 0, hue: 0 },
+      pendingAppliedBytes: null,
+      renderToken: 0
+    };
+
+    const statusEl = document.getElementById("status");
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    const emptyEl = document.getElementById("empty");
+    const applyButton = document.getElementById("applyButton");
+    const resetButton = document.getElementById("resetButton");
+    const refreshButton = document.getElementById("refreshButton");
+    const debugEl = document.getElementById("debug");
+    const controls = Array.from(document.querySelectorAll("input[type='range']"));
+
+    function post(message) {
+      parent.postMessage(message, "*");
+      parent.postMessage({ pluginMessage: message }, "*");
+    }
+
+    function clamp(value) {
+      return Math.max(0, Math.min(255, value));
+    }
+
+    function normalizeBytes(input) {
+      if (!input) return new Uint8Array();
+      if (input instanceof Uint8Array) return input;
+      if (input instanceof ArrayBuffer) return new Uint8Array(input);
+      if (Array.isArray(input)) return new Uint8Array(input);
+      if (input.buffer instanceof ArrayBuffer) return new Uint8Array(input.buffer);
+      if (typeof input === "string") {
+        const base64 = input.includes(",") ? input.split(",").pop() : input;
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+      }
+      return new Uint8Array();
+    }
+
+    function byteSignature(bytes) {
+      return Array.from(bytes.slice(0, 8)).map((value) => value.toString(16).padStart(2, "0")).join(" ");
+    }
+
+    function setStatus(message, isError = false) {
+      statusEl.classList.toggle("error", isError);
+      if (isError) {
+        statusEl.textContent = message;
+      } else {
+        statusEl.innerHTML = `<strong>${state.nodeName || "Image loaded"}</strong>${message}`;
+      }
+    }
+
+    function setControlsEnabled(enabled) {
+      controls.forEach((control) => { control.disabled = !enabled; });
+      applyButton.disabled = !enabled;
+      resetButton.disabled = !enabled;
+    }
+
+    function updateOutputs() {
+      controls.forEach((control) => { control.nextElementSibling.value = control.value; });
+    }
+
+    function resetValues() {
+      state.values = { brightness: 0, contrast: 0, saturation: 0, hue: 0 };
+      controls.forEach((control) => { control.value = state.values[control.id]; });
+      updateOutputs();
+    }
+
+    function setValues(values) {
+      state.values = {
+        brightness: Number(values && values.brightness) || 0,
+        contrast: Number(values && values.contrast) || 0,
+        saturation: Number(values && values.saturation) || 0,
+        hue: Number(values && values.hue) || 0
+      };
+      controls.forEach((control) => { control.value = state.values[control.id]; });
+      updateOutputs();
+    }
+
+    function hueRotate(r, g, b, degrees) {
+      const angle = degrees * Math.PI / 180;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return [
+        r * (0.213 + cos * 0.787 - sin * 0.213) + g * (0.715 - cos * 0.715 - sin * 0.715) + b * (0.072 - cos * 0.072 + sin * 0.928),
+        r * (0.213 - cos * 0.213 + sin * 0.143) + g * (0.715 + cos * 0.285 + sin * 0.140) + b * (0.072 - cos * 0.072 - sin * 0.283),
+        r * (0.213 - cos * 0.213 - sin * 0.787) + g * (0.715 - cos * 0.715 + sin * 0.715) + b * (0.072 + cos * 0.928 + sin * 0.072)
+      ];
+    }
+
+    function applyColorAdjustments(imageData) {
+      const data = imageData.data;
+      const brightness = state.values.brightness * 2.55;
+      const contrast = (259 * (state.values.contrast + 255)) / (255 * (259 - state.values.contrast));
+      const saturation = 1 + state.values.saturation / 100;
+      const hue = state.values.hue;
+
+      for (let i = 0; i < data.length; i += 4) {
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
+        [r, g, b] = hueRotate(r, g, b, hue);
+        r = contrast * (r - 128) + 128 + brightness;
+        g = contrast * (g - 128) + 128 + brightness;
+        b = contrast * (b - 128) + 128 + brightness;
+        const gray = r * 0.2126 + g * 0.7152 + b * 0.0722;
+        data[i] = clamp(gray + (r - gray) * saturation);
+        data[i + 1] = clamp(gray + (g - gray) * saturation);
+        data[i + 2] = clamp(gray + (b - gray) * saturation);
+      }
+
+      return imageData;
+    }
+
+    function renderPreview() {
+      if (!state.image) return;
+      const token = ++state.renderToken;
+      requestAnimationFrame(() => {
+        if (token !== state.renderToken) return;
+        canvas.width = state.image.naturalWidth || state.image.width;
+        canvas.height = state.image.naturalHeight || state.image.height;
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(state.image, 0, 0);
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        context.putImageData(applyColorAdjustments(imageData), 0, 0);
+      });
+    }
+
+    function loadImageFromBytes(rawBytes) {
+      return new Promise((resolve, reject) => {
+        const bytes = normalizeBytes(rawBytes);
+        debugEl.textContent = `mode=${state.mode}, bytes=${bytes.length}, sig=${byteSignature(bytes)}`;
+
+        if (!bytes.length) {
+          reject(new Error("No image bytes were received from the plugin host."));
+          return;
+        }
+
+        const blob = new Blob([bytes], { type: "image/png" });
+        const url = URL.createObjectURL(blob);
+        const image = new Image();
+        image.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(image);
+        };
+        image.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error(`Preview image failed to load. bytes=${bytes.length}, sig=${byteSignature(bytes)}`));
+        };
+        image.src = url;
+      });
+    }
+
+    function canvasToBytes() {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            reject(new Error("Image export failed."));
+            return;
+          }
+          resolve(new Uint8Array(await blob.arrayBuffer()));
+        }, "image/png", 0.96);
+      });
+    }
+
+    controls.forEach((control) => {
+      control.addEventListener("input", () => {
+        state.values[control.id] = Number(control.value);
+        updateOutputs();
+        renderPreview();
+      });
+    });
+
+    resetButton.addEventListener("click", () => {
+      resetValues();
+      renderPreview();
+      debugEl.textContent = "Reset clicked. Restoring original image...";
+      post({ type: "reset-image" });
+    });
+
+    refreshButton.addEventListener("click", () => {
+      debugEl.textContent = "Refresh clicked. Sent refresh-selection.";
+      post({ type: "refresh-selection" });
+    });
+
+    applyButton.addEventListener("click", async () => {
+      if (!state.image) return;
+      applyButton.disabled = true;
+      applyButton.textContent = "Applying";
+      try {
+        renderPreview();
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const bytes = await canvasToBytes();
+        state.pendingAppliedBytes = bytes;
+        post({ type: "apply-image", bytes, params: state.values });
+      } catch (error) {
+        setStatus(error.message || "Apply failed.", true);
+      } finally {
+        applyButton.textContent = "Apply";
+        applyButton.disabled = false;
+      }
+    });
+
+    window.onmessage = async (event) => {
+      const message = event.data && event.data.pluginMessage ? event.data.pluginMessage : event.data;
+      if (!message || !message.type) return;
+
+      if (message.type === "selection-error") {
+        state.image = null;
+        state.nodeName = "";
+        state.mode = "none";
+        canvas.hidden = true;
+        emptyEl.hidden = false;
+        emptyEl.textContent = message.message;
+        debugEl.textContent = "No preview data.";
+        setStatus(message.message, true);
+        setControlsEnabled(false);
+        return;
+      }
+
+      if (message.type === "selection-status") {
+        debugEl.textContent = message.detail || "No diagnostics.";
+        if (message.ok) {
+          state.nodeName = message.title || "Selected layer";
+          setStatus("Reading preview data...");
+        } else {
+          state.image = null;
+          state.nodeName = "";
+          state.mode = "none";
+          canvas.hidden = true;
+          emptyEl.hidden = false;
+          emptyEl.textContent = message.title || "No preview.";
+          setStatus(message.title || "No preview.", true);
+          setControlsEnabled(false);
+        }
+        return;
+      }
+
+      if (message.type === "selection-image") {
+        try {
+          state.nodeName = message.nodeName || "Image";
+          state.mode = message.mode || "unknown";
+          state.image = await loadImageFromBytes(message.bytes);
+          setValues(message.params);
+          canvas.hidden = false;
+          emptyEl.hidden = true;
+          setStatus(message.sourceChanged ? "Image source changed. Params reset." : "Ready to tune.");
+          setControlsEnabled(true);
+          renderPreview();
+        } catch (error) {
+          state.image = null;
+          canvas.hidden = true;
+          emptyEl.hidden = false;
+          emptyEl.textContent = error.message || "Image read failed.";
+          setStatus(error.message || "Image read failed.", true);
+          setControlsEnabled(false);
+        }
+      }
+
+      if (message.type === "apply-complete") {
+        setValues(message.params || state.values);
+        debugEl.textContent = message.detail || "Apply complete.";
+        setStatus("Ready for another adjustment.");
+        setControlsEnabled(true);
+        renderPreview();
+      }
+
+      if (message.type === "reset-complete") {
+        state.pendingAppliedBytes = null;
+        setValues(message.params);
+        debugEl.textContent = message.detail || "Reset complete.";
+        setStatus("Restored original image.");
+        setControlsEnabled(true);
+      }
+    };
+
+    setControlsEnabled(false);
+    updateOutputs();
+    debugEl.textContent = "UI loaded. Sent refresh-selection.";
+    post({ type: "refresh-selection" });
+  </script>
+</body>
+</html>
+
+
