@@ -195,6 +195,34 @@
       color: var(--text);
     }
 
+    .value-input {
+      width: 44px;
+      height: 24px;
+      padding: 3px 4px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    .value-input:hover,
+    .value-input:focus {
+      border-color: var(--line);
+      background: #f9fafb;
+      color: var(--text);
+    }
+
+    .value-input::-webkit-outer-spin-button,
+    .value-input::-webkit-inner-spin-button {
+      margin: 0;
+      -webkit-appearance: none;
+    }
+
     .grading-grid {
       display: flex;
       flex-direction: column;
@@ -358,37 +386,37 @@
       <div class="control">
         <label for="exposure" data-i18n="exposure">曝光</label>
         <input id="exposure" type="range" min="-100" max="100" value="0" />
-        <output for="exposure">0</output>
+        <input class="value-input" type="number" data-value-for="exposure" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="exposure" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="contrast" data-i18n="contrast">对比度</label>
         <input id="contrast" type="range" min="-100" max="100" value="0" />
-        <output for="contrast">0</output>
+        <input class="value-input" type="number" data-value-for="contrast" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="contrast" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="highlights" data-i18n="highlights">高光</label>
         <input id="highlights" type="range" min="-100" max="100" value="0" />
-        <output for="highlights">0</output>
+        <input class="value-input" type="number" data-value-for="highlights" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="highlights" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="shadows" data-i18n="shadows">阴影</label>
         <input id="shadows" type="range" min="-100" max="100" value="0" />
-        <output for="shadows">0</output>
+        <input class="value-input" type="number" data-value-for="shadows" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="shadows" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="whites" data-i18n="whites">白色色阶</label>
         <input id="whites" type="range" min="-100" max="100" value="0" />
-        <output for="whites">0</output>
+        <input class="value-input" type="number" data-value-for="whites" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="whites" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="blacks" data-i18n="blacks">黑色色阶</label>
         <input id="blacks" type="range" min="-100" max="100" value="0" />
-        <output for="blacks">0</output>
+        <input class="value-input" type="number" data-value-for="blacks" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="blacks" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
     </section>
@@ -398,31 +426,31 @@
       <div class="control">
         <label for="temperature" data-i18n="temperature">色温</label>
         <input id="temperature" type="range" min="-100" max="100" value="0" />
-        <output for="temperature">0</output>
+        <input class="value-input" type="number" data-value-for="temperature" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="temperature" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="tint" data-i18n="tint">色调</label>
         <input id="tint" type="range" min="-100" max="100" value="0" />
-        <output for="tint">0</output>
+        <input class="value-input" type="number" data-value-for="tint" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="tint" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="vibrance" data-i18n="vibrance">自然饱和度</label>
         <input id="vibrance" type="range" min="-100" max="100" value="0" />
-        <output for="vibrance">0</output>
+        <input class="value-input" type="number" data-value-for="vibrance" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="vibrance" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="saturation" data-i18n="saturation">饱和度</label>
         <input id="saturation" type="range" min="-100" max="100" value="0" />
-        <output for="saturation">0</output>
+        <input class="value-input" type="number" data-value-for="saturation" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="saturation" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="hue" data-i18n="hue">色相</label>
         <input id="hue" type="range" min="-180" max="180" value="0" />
-        <output for="hue">0</output>
+        <input class="value-input" type="number" data-value-for="hue" min="-180" max="180" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="hue" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
     </section>
@@ -442,7 +470,7 @@
           </div>
           <div class="grading-luma">
             <input id="cgShadowsLuminance" type="range" min="-100" max="100" value="0" />
-            <output for="cgShadowsLuminance">0</output>
+            <input class="value-input" type="number" data-value-for="cgShadowsLuminance" min="-100" max="100" step="1" value="0" />
             <button class="reset-param" type="button" data-reset-param="cgShadowsLuminance" title="Reset" aria-label="Reset parameter">&#8634;</button>
           </div>
         </div>
@@ -458,7 +486,7 @@
           </div>
           <div class="grading-luma">
             <input id="cgMidtonesLuminance" type="range" min="-100" max="100" value="0" />
-            <output for="cgMidtonesLuminance">0</output>
+            <input class="value-input" type="number" data-value-for="cgMidtonesLuminance" min="-100" max="100" step="1" value="0" />
             <button class="reset-param" type="button" data-reset-param="cgMidtonesLuminance" title="Reset" aria-label="Reset parameter">&#8634;</button>
           </div>
         </div>
@@ -474,7 +502,7 @@
           </div>
           <div class="grading-luma">
             <input id="cgHighlightsLuminance" type="range" min="-100" max="100" value="0" />
-            <output for="cgHighlightsLuminance">0</output>
+            <input class="value-input" type="number" data-value-for="cgHighlightsLuminance" min="-100" max="100" step="1" value="0" />
             <button class="reset-param" type="button" data-reset-param="cgHighlightsLuminance" title="Reset" aria-label="Reset parameter">&#8634;</button>
           </div>
         </div>
@@ -482,13 +510,13 @@
       <div class="control">
         <label for="cgBlending" data-i18n="cgBlending">混合</label>
         <input id="cgBlending" type="range" min="0" max="100" value="50" />
-        <output for="cgBlending">50</output>
+        <input class="value-input" type="number" data-value-for="cgBlending" min="0" max="100" step="1" value="50" />
         <button class="reset-param" type="button" data-reset-param="cgBlending" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="cgBalance" data-i18n="cgBalance">平衡</label>
         <input id="cgBalance" type="range" min="-100" max="100" value="0" />
-        <output for="cgBalance">0</output>
+        <input class="value-input" type="number" data-value-for="cgBalance" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="cgBalance" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
     </section>
@@ -498,13 +526,13 @@
       <div class="control">
         <label for="grain" data-i18n="grain">颗粒</label>
         <input id="grain" type="range" min="0" max="100" value="0" />
-        <output for="grain">0</output>
+        <input class="value-input" type="number" data-value-for="grain" min="0" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="grain" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
       <div class="control">
         <label for="vignette" data-i18n="vignette">暗角</label>
         <input id="vignette" type="range" min="-100" max="100" value="0" />
-        <output for="vignette">0</output>
+        <input class="value-input" type="number" data-value-for="vignette" min="-100" max="100" step="1" value="0" />
         <button class="reset-param" type="button" data-reset-param="vignette" title="Reset" aria-label="Reset parameter">&#8634;</button>
       </div>
     </section>
@@ -673,7 +701,7 @@
     const languageButton = document.getElementById("languageButton");
     const debugEl = document.getElementById("debug");
     const controls = Array.from(document.querySelectorAll("input[type='range']"));
-    const numericOutputs = Array.from(document.querySelectorAll("output[for]"));
+    const numericInputs = Array.from(document.querySelectorAll("[data-value-for]"));
     const colorWheels = Array.from(document.querySelectorAll(".color-wheel"));
     const resetParamButtons = Array.from(document.querySelectorAll("[data-reset-param]"));
     const resetWheelButtons = Array.from(document.querySelectorAll("[data-reset-wheel]"));
@@ -766,9 +794,9 @@
 
     function setControlsEnabled(enabled) {
       controls.forEach((control) => { control.disabled = !enabled; });
-      numericOutputs.forEach((output) => {
-        output.contentEditable = enabled ? "true" : "false";
-        output.setAttribute("aria-disabled", enabled ? "false" : "true");
+      numericInputs.forEach((input) => {
+        input.disabled = !enabled;
+        input.setAttribute("aria-disabled", enabled ? "false" : "true");
       });
       resetParamButtons.forEach((button) => { button.disabled = !enabled; });
       resetWheelButtons.forEach((button) => { button.disabled = !enabled; });
@@ -780,7 +808,10 @@
     }
 
     function updateOutputs() {
-      controls.forEach((control) => { control.nextElementSibling.value = control.value; });
+      controls.forEach((control) => {
+        const input = document.querySelector(`[data-value-for="${control.id}"]`);
+        if (input && document.activeElement !== input) input.value = control.value;
+      });
       updateColorWheels();
     }
 
@@ -825,21 +856,22 @@
       return next;
     }
 
-    function commitOutputEdit(output) {
-      const control = document.getElementById(output.getAttribute("for"));
+    function commitNumericInput(input) {
+      const control = document.getElementById(input.dataset.valueFor);
       if (!control) return;
-      const raw = output.textContent.trim().replace(/[^\d.-]/g, "");
+      const raw = String(input.value).trim().replace(/[^\d.-]/g, "");
       const parsed = Number(raw);
       const next = clampToControl(control, parsed);
       control.value = next;
+      input.value = next;
       state.values[control.id] = next;
       applyValueChange();
     }
 
-    function cancelOutputEdit(output) {
-      const control = document.getElementById(output.getAttribute("for"));
-      if (control) output.textContent = control.value;
-      output.blur();
+    function cancelNumericInput(input) {
+      const control = document.getElementById(input.dataset.valueFor);
+      if (control) input.value = control.value;
+      input.blur();
     }
 
     function getDefaultValues() {
@@ -1251,28 +1283,22 @@
       });
     });
 
-    numericOutputs.forEach((output) => {
-      output.setAttribute("tabindex", "0");
-      output.setAttribute("role", "spinbutton");
-      output.addEventListener("focus", () => {
-        const selection = window.getSelection();
-        const range = document.createRange();
-        range.selectNodeContents(output);
-        selection.removeAllRanges();
-        selection.addRange(range);
+    numericInputs.forEach((input) => {
+      input.addEventListener("focus", () => {
+        input.select();
       });
-      output.addEventListener("keydown", (event) => {
+      input.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
           event.preventDefault();
-          commitOutputEdit(output);
-          output.blur();
+          commitNumericInput(input);
+          input.blur();
         } else if (event.key === "Escape") {
           event.preventDefault();
-          cancelOutputEdit(output);
+          cancelNumericInput(input);
         }
       });
-      output.addEventListener("blur", () => {
-        commitOutputEdit(output);
+      input.addEventListener("blur", () => {
+        commitNumericInput(input);
       });
     });
 

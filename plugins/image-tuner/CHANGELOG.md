@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.1 - 2026-06-26
+
+### Fixed
+
+- Replace contenteditable slider values with native number inputs after plugin testing showed value entry was unreliable.
+
 ## v1.0.0 - 2026-06-26
 
 First stable release. Earlier public tags were test releases and have been renamed to `v0.1.0` and `v0.2.0`.
