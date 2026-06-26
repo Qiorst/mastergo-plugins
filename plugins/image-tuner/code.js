@@ -74,6 +74,246 @@ function getDefaultParams() {
   return params;
 }
 
+function normalizeBaseUrl(value) {
+  var raw = String(value || "").trim() || "https://api.openai.com/v1";
+  return raw.replace(/\/+$/, "");
+}
+
+function getAiInstruction() {
+  return [
+    "You are generating non-destructive photo tuning settings for a MasterGo plugin named Image Tuner.",
+    "Compare the target image with the reference image and return only practical slider values that move the target toward the reference style.",
+    "Keep changes tasteful. Avoid extreme values unless the reference image clearly requires them.",
+    "Use hue values in degrees, saturation/luminance/blending/balance and all other sliders within their declared ranges.",
+    "Return JSON only through the provided schema. Include a short Chinese summary."
+  ].join(" ");
+}
+
+function buildAiRequestBody(payload) {
+  return {
+    model: payload.model || "gpt-4.1-mini",
+    input: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: getAiInstruction()
+          },
+          { type: "input_text", text: "Target image:" },
+          { type: "input_image", image_url: payload.targetDataUrl },
+          { type: "input_text", text: "Reference style image:" },
+          { type: "input_image", image_url: payload.referenceDataUrl }
+        ]
+      }
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: "image_tuner_ai_match",
+        strict: true,
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            summary: { type: "string" },
+            params: {
+              type: "object",
+              additionalProperties: false,
+              properties: payload.schemaProperties || {},
+              required: payload.parameterKeys || PARAM_KEYS
+            }
+          },
+          required: ["summary", "params"]
+        }
+      }
+    }
+  };
+}
+
+function buildChatRequestBody(payload) {
+  return {
+    model: payload.model || "gpt-4.1-mini",
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "image_tuner_ai_match",
+        strict: true,
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            summary: { type: "string" },
+            params: {
+              type: "object",
+              additionalProperties: false,
+              properties: payload.schemaProperties || {},
+              required: payload.parameterKeys || PARAM_KEYS
+            }
+          },
+          required: ["summary", "params"]
+        }
+      }
+    },
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: getAiInstruction() },
+          { type: "text", text: "Target image:" },
+          { type: "image_url", image_url: { url: payload.targetDataUrl } },
+          { type: "text", text: "Reference style image:" },
+          { type: "image_url", image_url: { url: payload.referenceDataUrl } }
+        ]
+      }
+    ]
+  };
+}
+
+function buildChatJsonOnlyRequestBody(payload) {
+  var paramsShape = (payload.parameterKeys || PARAM_KEYS).map(function (key) {
+    return '"' + key + '": 0';
+  }).join(", ");
+  return {
+    model: payload.model || "gpt-4.1-mini",
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: getAiInstruction() + " Return only valid JSON in this exact shape: {\"summary\":\"中文摘要\",\"params\":{" + paramsShape + "}}."
+          },
+          { type: "text", text: "Target image:" },
+          { type: "image_url", image_url: { url: payload.targetDataUrl } },
+          { type: "text", text: "Reference style image:" },
+          { type: "image_url", image_url: { url: payload.referenceDataUrl } }
+        ]
+      }
+    ]
+  };
+}
+
+function extractResponseText(data) {
+  if (data && typeof data.output_text === "string") return data.output_text;
+  if (data && data.choices && data.choices[0] && data.choices[0].message) {
+    var messageContent = data.choices[0].message.content;
+    if (typeof messageContent === "string") return messageContent;
+    if (Array.isArray(messageContent)) {
+      return messageContent.map(function (part) {
+        return typeof part.text === "string" ? part.text : "";
+      }).join("");
+    }
+  }
+  var chunks = [];
+  (data && data.output ? data.output : []).forEach(function (item) {
+    (item.content || []).forEach(function (content) {
+      if (typeof content.text === "string") chunks.push(content.text);
+    });
+  });
+  return chunks.join("");
+}
+
+function sendJsonRequest(url, apiKey, body) {
+  if (typeof fetch === "function") {
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + apiKey
+      },
+      body: JSON.stringify(body)
+    }).then(async function (response) {
+      var data = {};
+      try {
+        data = await response.json();
+      } catch (jsonError) {}
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      };
+    });
+  }
+
+  if (typeof XMLHttpRequest === "function") {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", url, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
+        var data = {};
+        try {
+          data = JSON.parse(xhr.responseText || "{}");
+        } catch (jsonError) {}
+        resolve({
+          ok: xhr.status >= 200 && xhr.status < 300,
+          status: xhr.status,
+          statusText: xhr.statusText || "",
+          data: data
+        });
+      };
+      xhr.onerror = function () {
+        reject(new Error("Network request failed"));
+      };
+      xhr.send(JSON.stringify(body));
+    });
+  }
+
+  return Promise.reject(new Error("Plugin runtime does not support fetch or XMLHttpRequest"));
+}
+
+function responseErrorMessage(result) {
+  return result && result.data && result.data.error && result.data.error.message
+    ? result.data.error.message
+    : result.status + " " + result.statusText;
+}
+
+async function sendAiRequest(payload) {
+  var baseUrl = normalizeBaseUrl(payload.baseUrl);
+  var responseResult = await sendJsonRequest(baseUrl + "/responses", payload.apiKey, buildAiRequestBody(payload));
+  if (responseResult.ok) return responseResult.data;
+
+  var shouldTryChat = responseResult.status === 400 || responseResult.status === 404 || responseResult.status === 405;
+  if (!shouldTryChat) throw new Error(responseErrorMessage(responseResult));
+
+  var chatResult = await sendJsonRequest(baseUrl + "/chat/completions", payload.apiKey, buildChatRequestBody(payload));
+  if (chatResult.ok) return chatResult.data;
+
+  var shouldTryJsonOnly = chatResult.status === 400 || chatResult.status === 422;
+  if (shouldTryJsonOnly) {
+    var jsonOnlyResult = await sendJsonRequest(baseUrl + "/chat/completions", payload.apiKey, buildChatJsonOnlyRequestBody(payload));
+    if (jsonOnlyResult.ok) return jsonOnlyResult.data;
+    throw new Error(responseErrorMessage(jsonOnlyResult) || responseErrorMessage(chatResult) || responseErrorMessage(responseResult));
+  }
+
+  throw new Error(responseErrorMessage(chatResult) || responseErrorMessage(responseResult));
+}
+
+async function requestAiMatch(payload) {
+  try {
+    if (!payload || !payload.apiKey) throw new Error("Missing API key");
+    if (!payload.targetDataUrl || !payload.referenceDataUrl) throw new Error("Missing image data");
+    var data = await sendAiRequest(payload);
+    var text = extractResponseText(data);
+    if (!text) throw new Error("AI response was empty");
+    var parsed = JSON.parse(text);
+    postToUi({
+      type: "ai-match-complete",
+      params: parsed.params || {},
+      summary: parsed.summary || ""
+    });
+  } catch (error) {
+    postToUi({
+      type: "ai-match-error",
+      message: error && error.message ? error.message : String(error)
+    });
+  }
+}
+
 function readSavedParams(node) {
   if (!node || typeof node.getPluginData !== "function") return getDefaultParams();
 
@@ -548,6 +788,9 @@ if (host.ui) {
     }
     if (payload && payload.type === "reset-image") {
       resetSelectedImage();
+    }
+    if (payload && payload.type === "ai-match") {
+      requestAiMatch(payload);
     }
   };
 }

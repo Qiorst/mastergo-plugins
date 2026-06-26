@@ -1,5 +1,41 @@
 # Changelog
 
+## v1.1.0 - 2026-06-26
+
+### Added
+
+- Add AI reference-image color matching powered by a user-provided OpenAI API key.
+- Add API key input, optional local key remembering, and saved-key clearing.
+- Add editable Base URL support for OpenAI-compatible API endpoints.
+- Add editable local AI proxy URL for environments where MasterGo blocks plugin network APIs.
+- Add editable AI model input so users can choose a model available to their API key.
+- Add OpenCode JSON config import to detect `baseURL`, `apiKey`, and model IDs automatically.
+- Add reference image upload for extracting a target color style.
+- Add structured AI parameter generation for existing Light, Color, Color Grading, and Effects controls.
+
+### Changed
+
+- Apply AI-generated values through the existing realtime preview and auto-apply flow so users can keep manually fine-tuning.
+- Downsample target and reference images before AI analysis to keep requests lighter.
+- Route AI requests through the plugin main thread instead of the UI iframe to avoid direct UI `fetch` failures on compatible endpoints.
+- Add `XMLHttpRequest` fallback for plugin runtimes that do not expose `fetch`.
+- Automatically retry OpenAI-compatible `/chat/completions` when `/responses` is not supported.
+- Prefer the local AI proxy from the UI before falling back to plugin-main requests.
+
+### Development log
+
+- Planned a bring-your-own-key workflow so the plugin does not ship or commit any secret key.
+- Added a dedicated AI panel above the manual tuning controls.
+- Added local-only optional API key persistence with a clear-key action.
+- Added OpenAI-compatible Base URL configuration.
+- Added OpenCode config JSON parsing for provider options and models.
+- Added reference image upload and client-side preview-size conversion.
+- Added structured JSON output validation and slider-range clamping before applying AI suggestions.
+- Connected AI-generated parameters to the existing non-destructive tuning pipeline.
+- Moved AI network requests out of the UI layer after plugin testing showed direct UI requests can fail before receiving a response.
+- Added request fallbacks after plugin testing showed the MasterGo main runtime may not provide `fetch`.
+- Added `ai-proxy.js` after testing showed the MasterGo runtime may provide neither `fetch` nor `XMLHttpRequest`.
+
 ## v1.0.1 - 2026-06-26
 
 ### Fixed
