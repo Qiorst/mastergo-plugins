@@ -1,6 +1,8 @@
 # Changelog
 
-## v1.2.0 - 2026-06-26
+## v1.0.0 - 2026-06-26
+
+First stable release. Earlier public tags were test releases and have been renamed to `v0.1.0` and `v0.2.0`.
 
 ### Added
 
@@ -47,7 +49,9 @@
 - Hid the side scrollbar while preserving scrollable controls.
 - Moved status helper text out of the selected-layer card and into the footer/debug status area.
 
-## v1.1.0 - 2026-06-26
+## v0.2.0 - 2026-06-26
+
+Test release.
 
 ### Added
 
@@ -68,7 +72,9 @@
 - Cancel pending auto-apply work before restoring the original image with Reset.
 - Preserve the non-destructive original-image baseline, external image source change detection, and Reset-to-original behavior.
 
-## v1.0.0
+## v0.1.0
+
+Test release.
 
 - Select one MasterGo image layer.
 - Preview the selected image in the plugin panel.

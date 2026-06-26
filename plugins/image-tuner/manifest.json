@@ -1,7 +1,7 @@
 {
   "name": "Image Tuner",
   "id": "image-tuner",
-  "version": "1.2.0",
+  "version": "1.0.0",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
