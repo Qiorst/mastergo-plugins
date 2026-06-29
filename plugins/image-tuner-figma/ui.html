@@ -180,6 +180,11 @@
       box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
     }
 
+    .ai-field::placeholder {
+      color: #98a2b3;
+      opacity: 1;
+    }
+
     textarea.ai-field {
       height: 68px;
       resize: vertical;
@@ -490,23 +495,23 @@
       <div class="group-title" data-i18n="aiTitle">AI 参考图调色</div>
       <div class="ai-row">
         <label for="apiKeyInput" data-i18n="apiKey">API 密钥</label>
-        <input id="apiKeyInput" class="ai-field" type="password" autocomplete="off" spellcheck="false" placeholder="sk-..." />
+        <input id="apiKeyInput" class="ai-field" type="password" autocomplete="off" spellcheck="false" placeholder="例：sk-xxxxxxxxxxxxxxxx" />
       </div>
       <div class="ai-row">
         <label for="baseUrlInput" data-i18n="baseUrl">Base URL</label>
-        <input id="baseUrlInput" class="ai-field" type="url" autocomplete="off" spellcheck="false" value="https://api.openai.com/v1" />
+        <input id="baseUrlInput" class="ai-field" type="url" autocomplete="off" spellcheck="false" placeholder="例：https://api.openai.com/v1" />
       </div>
       <div class="ai-row">
         <label for="proxyUrlInput" data-i18n="proxyUrl">代理地址</label>
-        <input id="proxyUrlInput" class="ai-field" type="url" autocomplete="off" spellcheck="false" value="http://127.0.0.1:8787/v1/ai-match" />
+        <input id="proxyUrlInput" class="ai-field" type="url" autocomplete="off" spellcheck="false" placeholder="例：http://127.0.0.1:8787/v1/ai-match" />
       </div>
       <div class="ai-row">
         <label for="aiModelInput" data-i18n="aiModel">模型</label>
-        <input id="aiModelInput" class="ai-field" type="text" autocomplete="off" spellcheck="false" value="gpt-4.1-mini" />
+        <input id="aiModelInput" class="ai-field" type="text" autocomplete="off" spellcheck="false" placeholder="例：gpt-4.1-mini" />
       </div>
       <div class="ai-row">
         <label for="opencodeConfigInput" data-i18n="opencodeConfig">OpenCode</label>
-        <textarea id="opencodeConfigInput" class="ai-field" spellcheck="false" placeholder="{ &quot;provider&quot;: { ... } }"></textarea>
+        <textarea id="opencodeConfigInput" class="ai-field" spellcheck="false" placeholder="例：{ &quot;provider&quot;: { &quot;openai&quot;: { &quot;options&quot;: { &quot;baseURL&quot;: &quot;https://api.openai.com/v1&quot;, &quot;apiKey&quot;: &quot;sk-...&quot; } } } }"></textarea>
       </div>
       <div class="ai-actions">
         <button id="importOpencodeButton" type="button" data-i18n="importOpencode">识别配置</button>
@@ -772,10 +777,15 @@
         cgBalance: "平衡",
         aiTitle: "AI 参考图调色",
         apiKey: "API 密钥",
+        apiKeyPlaceholder: "例：sk-xxxxxxxxxxxxxxxx",
         baseUrl: "Base URL",
+        baseUrlPlaceholder: "例：https://api.openai.com/v1",
         proxyUrl: "代理地址",
+        proxyUrlPlaceholder: "例：http://127.0.0.1:8787/v1/ai-match",
         aiModel: "模型",
+        aiModelPlaceholder: "例：gpt-4.1-mini",
         opencodeConfig: "OpenCode",
+        opencodePlaceholder: "例：{ \"provider\": { \"openai\": { \"options\": { \"baseURL\": \"https://api.openai.com/v1\", \"apiKey\": \"sk-...\" } } } }",
         importOpencode: "识别配置",
         clearConfig: "清空配置",
         rememberKey: "记住密钥",
@@ -848,10 +858,15 @@
         cgBalance: "Balance",
         aiTitle: "AI reference match",
         apiKey: "API key",
+        apiKeyPlaceholder: "e.g. sk-xxxxxxxxxxxxxxxx",
         baseUrl: "Base URL",
+        baseUrlPlaceholder: "e.g. https://api.openai.com/v1",
         proxyUrl: "Proxy URL",
+        proxyUrlPlaceholder: "e.g. http://127.0.0.1:8787/v1/ai-match",
         aiModel: "Model",
+        aiModelPlaceholder: "e.g. gpt-4.1-mini",
         opencodeConfig: "OpenCode",
+        opencodePlaceholder: "e.g. { \"provider\": { \"openai\": { \"options\": { \"baseURL\": \"https://api.openai.com/v1\", \"apiKey\": \"sk-...\" } } } }",
         importOpencode: "Import config",
         clearConfig: "Clear config",
         rememberKey: "Remember key",
@@ -1001,6 +1016,11 @@
       });
       languageButton.textContent = state.language === "zh" ? "EN" : "中文";
       languageButton.setAttribute("aria-label", state.language === "zh" ? "Switch to English" : "切换到中文");
+      apiKeyInput.placeholder = t("apiKeyPlaceholder");
+      baseUrlInput.placeholder = t("baseUrlPlaceholder");
+      proxyUrlInput.placeholder = t("proxyUrlPlaceholder");
+      aiModelInput.placeholder = t("aiModelPlaceholder");
+      opencodeConfigInput.placeholder = t("opencodePlaceholder");
       if (!state.aiBusy && !aiStatus.dataset.customMessage) aiStatus.textContent = t("aiHint");
       if (!state.image && !state.statusIsError) emptyEl.textContent = t("empty");
       setStatus(state.statusKey, state.statusIsError);
@@ -1194,6 +1214,8 @@
 
     function restoreSavedApiKey() {
       state.aiModel = aiModelInput.value.trim() || DEFAULT_AI_MODEL;
+      state.aiBaseUrl = normalizeBaseUrl(baseUrlInput.value);
+      state.aiProxyUrl = normalizeProxyUrl(proxyUrlInput.value);
       try {
         const savedKey = localStorage.getItem(AI_KEY_STORAGE) || "";
         const savedBaseUrl = localStorage.getItem(AI_BASE_URL_STORAGE) || "";
@@ -1240,9 +1262,11 @@
       state.aiRememberKey = false;
       state.aiBaseUrl = DEFAULT_AI_BASE_URL;
       state.aiProxyUrl = DEFAULT_AI_PROXY_URL;
+      state.aiModel = DEFAULT_AI_MODEL;
       apiKeyInput.value = "";
-      baseUrlInput.value = DEFAULT_AI_BASE_URL;
-      proxyUrlInput.value = DEFAULT_AI_PROXY_URL;
+      baseUrlInput.value = "";
+      proxyUrlInput.value = "";
+      aiModelInput.value = "";
       rememberKeyInput.checked = false;
       try {
         localStorage.removeItem(AI_KEY_STORAGE);

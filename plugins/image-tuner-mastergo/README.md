@@ -1,6 +1,6 @@
-﻿# Image Tuner
+# Image Tuner for MasterGo
 
-MasterGo image color tuning plugin prototype.
+MasterGo image color tuning plugin.
 
 ## Features
 
@@ -20,10 +20,12 @@ MasterGo image color tuning plugin prototype.
 ## Files
 
 ```text
-mastergo-image-tuner/
+image-tuner-mastergo/
   manifest.json
   code.js
   ui.html
+  icon.svg
+  ai-proxy.js
   README.md
 ```
 
@@ -36,7 +38,7 @@ mastergo-image-tuner/
 5. Start the local AI proxy before using AI reference matching:
 
 ```bash
-node plugins/image-tuner/ai-proxy.js
+node plugins/image-tuner-mastergo/ai-proxy.js
 ```
 
 6. To use AI reference matching, enter an OpenAI API key, keep or change the Base URL, Proxy URL, and model name, choose a reference image, and click Generate AI look.
@@ -45,6 +47,7 @@ node plugins/image-tuner/ai-proxy.js
 
 ## Notes
 
+- This folder is the MasterGo version. Use `plugins/image-tuner-figma` for the Figma version.
 - The plugin tries `mg`, then `mastergo`, then `figma` as the host object.
 - If direct image fill reading fails, it uses `node.exportAsync({ format: "PNG" })` as a fallback.
 - In fallback mode, applying the result replaces/sets the selected layer fill with the tuned PNG preview.

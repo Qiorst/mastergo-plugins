@@ -1,0 +1,2107 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Tuner</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f8;
+      --panel: #ffffff;
+      --text: #1f2328;
+      --muted: #667085;
+      --line: #d9dee7;
+      --accent: #2563eb;
+      --accent-strong: #1748b5;
+      --danger: #b42318;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font: 12px/1.45 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100vh;
+      padding: 240px 14px 72px;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+
+    .app::-webkit-scrollbar {
+      display: none;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .status {
+      min-height: 34px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .status strong {
+      display: block;
+      color: var(--text);
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status.error {
+      color: var(--danger);
+      border-color: #f4c7c1;
+      background: #fff7f6;
+    }
+
+    .preview {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      height: 226px;
+      padding: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background-color: #f6f7f8;
+      background:
+        linear-gradient(45deg, #e8ebef 25%, transparent 25%),
+        linear-gradient(-45deg, #e8ebef 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e8ebef 75%),
+        linear-gradient(-45deg, transparent 75%, #e8ebef 75%),
+        #f6f7f8;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      background-size: 16px 16px;
+      box-shadow: 0 12px 30px rgba(31, 35, 40, 0.18);
+    }
+
+    .preview::before {
+      content: "Preview";
+      position: absolute;
+      left: 10px;
+      top: 8px;
+      z-index: 1;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 650;
+      pointer-events: none;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 200px;
+    }
+
+    .empty {
+      max-width: 280px;
+      padding: 20px;
+      color: var(--muted);
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .ai-panel {
+      gap: 10px;
+    }
+
+    .ai-row {
+      display: grid;
+      grid-template-columns: 82px 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ai-field {
+      width: 100%;
+      height: 32px;
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      outline: none;
+    }
+
+    .ai-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+
+    .ai-field::placeholder {
+      color: #98a2b3;
+      opacity: 1;
+    }
+
+    textarea.ai-field {
+      height: 68px;
+      resize: vertical;
+      line-height: 1.35;
+    }
+
+    .ai-file {
+      display: none;
+    }
+
+    .ai-file-label {
+      display: grid;
+      place-items: center;
+      width: 72px;
+      height: 72px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(45deg, #e8ebef 25%, transparent 25%),
+        linear-gradient(-45deg, #e8ebef 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e8ebef 75%),
+        linear-gradient(-45deg, transparent 75%, #e8ebef 75%),
+        #f6f7f8;
+      background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+      background-size: 12px 12px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .ai-file-label:hover {
+      border-color: var(--accent);
+    }
+
+    .ai-note {
+      color: var(--muted);
+      font-size: 11px;
+      overflow-wrap: anywhere;
+    }
+
+    .ai-file-label img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .ai-file-placeholder[hidden],
+    .ai-reference-thumb[hidden] {
+      display: none;
+    }
+
+    .ai-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .ai-inline input[type="checkbox"] {
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .ai-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .ai-actions button {
+      min-width: 0;
+    }
+
+    .group-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 82px 1fr 44px 26px;
+      align-items: center;
+      gap: 10px;
+    }
+
+    label {
+      color: var(--text);
+      font-weight: 560;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    output {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      min-height: 24px;
+      padding: 3px 4px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: text;
+      outline: none;
+    }
+
+    output:hover,
+    output:focus {
+      border-color: var(--line);
+      background: #f9fafb;
+      color: var(--text);
+    }
+
+    .value-input {
+      width: 44px;
+      height: 24px;
+      padding: 3px 4px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    .value-input:hover,
+    .value-input:focus {
+      border-color: var(--line);
+      background: #f9fafb;
+      color: var(--text);
+    }
+
+    .value-input::-webkit-outer-spin-button,
+    .value-input::-webkit-inner-spin-button {
+      margin: 0;
+      -webkit-appearance: none;
+    }
+
+    .grading-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .grading-wheel-card {
+      display: grid;
+      grid-template-columns: 62px 118px 1fr;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .grading-wheel-label {
+      display: grid;
+      grid-template-columns: 1fr 24px;
+      align-items: start;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .grading-wheel-title {
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 650;
+      grid-column: 1 / -1;
+    }
+
+    .color-wheel {
+      position: relative;
+      width: 118px;
+      height: 118px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+      cursor: crosshair;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .color-wheel.disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .color-wheel-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+    }
+
+    .wheel-handle {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 2;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: #667085;
+      box-shadow: 0 0 0 1px rgba(31, 35, 40, 0.65);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .wheel-meta {
+      color: var(--muted);
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.3;
+    }
+
+    .grading-luma {
+      display: grid;
+      grid-template-columns: 1fr 34px 26px;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .reset-param {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+      padding: 0;
+      border-radius: 50%;
+      color: var(--muted);
+      line-height: 1;
+    }
+
+    .actions {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 11;
+      display: grid;
+      grid-template-columns: 1fr;
+      height: 58px;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--panel);
+      box-shadow: 0 12px 30px rgba(31, 35, 40, 0.18);
+    }
+
+    button {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    button:hover:not(:disabled) { border-color: var(--accent); }
+    button.primary:hover:not(:disabled) { background: var(--accent-strong); }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+    .footer {
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="header">
+      <h1>Image Tuner</h1>
+      <div class="header-actions">
+        <button id="languageButton" type="button">EN</button>
+        <button id="refreshButton" type="button" data-i18n="refresh">刷新</button>
+      </div>
+    </div>
+
+    <section id="status" class="status">请选择一个图片图层。</section>
+
+    <section class="preview">
+      <canvas id="canvas" hidden></canvas>
+      <div id="empty" class="empty" data-i18n="empty">图片预览会显示在这里。</div>
+    </section>
+
+    <section class="controls ai-panel" aria-label="AI reference matching">
+      <div class="group-title" data-i18n="aiTitle">AI 参考图调色</div>
+      <div class="ai-row">
+        <label for="apiKeyInput" data-i18n="apiKey">API 密钥</label>
+        <input id="apiKeyInput" class="ai-field" type="password" autocomplete="off" spellcheck="false" placeholder="例：sk-xxxxxxxxxxxxxxxx" />
+      </div>
+      <div class="ai-row">
+        <label for="baseUrlInput" data-i18n="baseUrl">Base URL</label>
+        <input id="baseUrlInput" class="ai-field" type="url" autocomplete="off" spellcheck="false" placeholder="例：https://api.openai.com/v1" />
+      </div>
+      <div class="ai-row">
+        <label for="proxyUrlInput" data-i18n="proxyUrl">代理地址</label>
+        <input id="proxyUrlInput" class="ai-field" type="url" autocomplete="off" spellcheck="false" placeholder="例：http://127.0.0.1:8787/v1/ai-match" />
+      </div>
+      <div class="ai-row">
+        <label for="aiModelInput" data-i18n="aiModel">模型</label>
+        <input id="aiModelInput" class="ai-field" type="text" autocomplete="off" spellcheck="false" placeholder="例：gpt-4.1-mini" />
+      </div>
+      <div class="ai-row">
+        <label for="opencodeConfigInput" data-i18n="opencodeConfig">OpenCode</label>
+        <textarea id="opencodeConfigInput" class="ai-field" spellcheck="false" placeholder="例：{ &quot;provider&quot;: { &quot;openai&quot;: { &quot;options&quot;: { &quot;baseURL&quot;: &quot;https://api.openai.com/v1&quot;, &quot;apiKey&quot;: &quot;sk-...&quot; } } } }"></textarea>
+      </div>
+      <div class="ai-actions">
+        <button id="importOpencodeButton" type="button" data-i18n="importOpencode">识别配置</button>
+        <button id="clearOpencodeButton" type="button" data-i18n="clearConfig">清空配置</button>
+      </div>
+      <label class="ai-inline">
+        <input id="rememberKeyInput" type="checkbox" />
+        <span data-i18n="rememberKey">记住密钥</span>
+      </label>
+      <div class="ai-row">
+        <span data-i18n="referenceImage">参考图</span>
+        <div>
+          <label class="ai-file-label" for="referenceImageInput">
+            <span id="referenceImagePlaceholder" class="ai-file-placeholder" data-i18n="chooseReference">选择参考图</span>
+            <img id="referenceImagePreviewImg" class="ai-reference-thumb" alt="" hidden />
+          </label>
+          <input id="referenceImageInput" class="ai-file" type="file" accept="image/*" />
+        </div>
+      </div>
+      <div class="ai-actions">
+        <button id="aiMatchButton" class="primary" type="button" data-i18n="aiMatch">生成 AI 调色</button>
+        <button id="clearAiButton" type="button" data-i18n="clearAi">清除密钥</button>
+      </div>
+      <div id="aiStatus" class="ai-note" data-i18n="aiHint">密钥只用于本次请求；勾选记住后才会保存在本机。</div>
+    </section>
+
+    <section class="controls" aria-label="Light controls">
+      <div class="group-title" data-i18n="light">光效</div>
+      <div class="control">
+        <label for="exposure" data-i18n="exposure">曝光</label>
+        <input id="exposure" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="exposure" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="exposure" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="contrast" data-i18n="contrast">对比度</label>
+        <input id="contrast" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="contrast" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="contrast" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="highlights" data-i18n="highlights">高光</label>
+        <input id="highlights" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="highlights" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="highlights" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="shadows" data-i18n="shadows">阴影</label>
+        <input id="shadows" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="shadows" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="shadows" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="whites" data-i18n="whites">白色色阶</label>
+        <input id="whites" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="whites" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="whites" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="blacks" data-i18n="blacks">黑色色阶</label>
+        <input id="blacks" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="blacks" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="blacks" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Color controls">
+      <div class="group-title" data-i18n="color">颜色</div>
+      <div class="control">
+        <label for="temperature" data-i18n="temperature">色温</label>
+        <input id="temperature" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="temperature" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="temperature" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="tint" data-i18n="tint">色调</label>
+        <input id="tint" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="tint" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="tint" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="vibrance" data-i18n="vibrance">自然饱和度</label>
+        <input id="vibrance" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="vibrance" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="vibrance" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="saturation" data-i18n="saturation">饱和度</label>
+        <input id="saturation" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="saturation" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="saturation" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="hue" data-i18n="hue">色相</label>
+        <input id="hue" type="range" min="-180" max="180" value="0" />
+        <input class="value-input" type="number" data-value-for="hue" min="-180" max="180" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="hue" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Color grading controls">
+      <div class="group-title" data-i18n="colorGrading">颜色分级</div>
+      <div class="grading-grid">
+        <div class="grading-wheel-card">
+          <div class="grading-wheel-label">
+            <div class="grading-wheel-title" data-i18n="cgShadows">阴影</div>
+            <div class="wheel-meta" data-wheel-meta="shadows">H 0 / S 0</div>
+            <button class="reset-param" type="button" data-reset-wheel="shadows" title="Reset" aria-label="Reset shadow color grade">&#8634;</button>
+          </div>
+          <div class="color-wheel" data-wheel="shadows" role="slider" tabindex="0" aria-label="Shadow color grade">
+            <canvas class="color-wheel-canvas" width="164" height="164" aria-hidden="true"></canvas>
+            <span class="wheel-handle"></span>
+          </div>
+          <div class="grading-luma">
+            <input id="cgShadowsLuminance" type="range" min="-100" max="100" value="0" />
+            <input class="value-input" type="number" data-value-for="cgShadowsLuminance" min="-100" max="100" step="1" value="0" />
+            <button class="reset-param" type="button" data-reset-param="cgShadowsLuminance" title="Reset" aria-label="Reset parameter">&#8634;</button>
+          </div>
+        </div>
+        <div class="grading-wheel-card">
+          <div class="grading-wheel-label">
+            <div class="grading-wheel-title" data-i18n="cgMidtones">中间调</div>
+            <div class="wheel-meta" data-wheel-meta="midtones">H 0 / S 0</div>
+            <button class="reset-param" type="button" data-reset-wheel="midtones" title="Reset" aria-label="Reset midtone color grade">&#8634;</button>
+          </div>
+          <div class="color-wheel" data-wheel="midtones" role="slider" tabindex="0" aria-label="Midtone color grade">
+            <canvas class="color-wheel-canvas" width="164" height="164" aria-hidden="true"></canvas>
+            <span class="wheel-handle"></span>
+          </div>
+          <div class="grading-luma">
+            <input id="cgMidtonesLuminance" type="range" min="-100" max="100" value="0" />
+            <input class="value-input" type="number" data-value-for="cgMidtonesLuminance" min="-100" max="100" step="1" value="0" />
+            <button class="reset-param" type="button" data-reset-param="cgMidtonesLuminance" title="Reset" aria-label="Reset parameter">&#8634;</button>
+          </div>
+        </div>
+        <div class="grading-wheel-card">
+          <div class="grading-wheel-label">
+            <div class="grading-wheel-title" data-i18n="cgHighlights">高光</div>
+            <div class="wheel-meta" data-wheel-meta="highlights">H 0 / S 0</div>
+            <button class="reset-param" type="button" data-reset-wheel="highlights" title="Reset" aria-label="Reset highlight color grade">&#8634;</button>
+          </div>
+          <div class="color-wheel" data-wheel="highlights" role="slider" tabindex="0" aria-label="Highlight color grade">
+            <canvas class="color-wheel-canvas" width="164" height="164" aria-hidden="true"></canvas>
+            <span class="wheel-handle"></span>
+          </div>
+          <div class="grading-luma">
+            <input id="cgHighlightsLuminance" type="range" min="-100" max="100" value="0" />
+            <input class="value-input" type="number" data-value-for="cgHighlightsLuminance" min="-100" max="100" step="1" value="0" />
+            <button class="reset-param" type="button" data-reset-param="cgHighlightsLuminance" title="Reset" aria-label="Reset parameter">&#8634;</button>
+          </div>
+        </div>
+      </div>
+      <div class="control">
+        <label for="cgBlending" data-i18n="cgBlending">混合</label>
+        <input id="cgBlending" type="range" min="0" max="100" value="50" />
+        <input class="value-input" type="number" data-value-for="cgBlending" min="0" max="100" step="1" value="50" />
+        <button class="reset-param" type="button" data-reset-param="cgBlending" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="cgBalance" data-i18n="cgBalance">平衡</label>
+        <input id="cgBalance" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="cgBalance" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="cgBalance" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Effects controls">
+      <div class="group-title" data-i18n="effects">效果</div>
+      <div class="control">
+        <label for="grain" data-i18n="grain">颗粒</label>
+        <input id="grain" type="range" min="0" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="grain" min="0" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="grain" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+      <div class="control">
+        <label for="vignette" data-i18n="vignette">暗角</label>
+        <input id="vignette" type="range" min="-100" max="100" value="0" />
+        <input class="value-input" type="number" data-value-for="vignette" min="-100" max="100" step="1" value="0" />
+        <button class="reset-param" type="button" data-reset-param="vignette" title="Reset" aria-label="Reset parameter">&#8634;</button>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button id="resetButton" type="button" data-i18n="reset">重置</button>
+    </section>
+
+    <div id="debug" class="footer">界面已加载，等待插件主程序...</div>
+  </main>
+
+  <script>
+    const state = {
+      image: null,
+      nodeName: "",
+      mode: "none",
+      values: {
+        exposure: 0,
+        contrast: 0,
+        highlights: 0,
+        shadows: 0,
+        whites: 0,
+        blacks: 0,
+        temperature: 0,
+        tint: 0,
+        vibrance: 0,
+        saturation: 0,
+        hue: 0,
+        cgShadowsHue: 0,
+        cgShadowsSaturation: 0,
+        cgShadowsLuminance: 0,
+        cgMidtonesHue: 0,
+        cgMidtonesSaturation: 0,
+        cgMidtonesLuminance: 0,
+        cgHighlightsHue: 0,
+        cgHighlightsSaturation: 0,
+        cgHighlightsLuminance: 0,
+        cgBlending: 50,
+        cgBalance: 0,
+        grain: 0,
+        vignette: 0
+      },
+      pendingAppliedBytes: null,
+      isApplying: false,
+      queuedAutoApply: false,
+      autoApplyTimer: null,
+      editVersion: 0,
+      applyingVersion: 0,
+      renderToken: 0,
+      language: "zh",
+      statusKey: "selectOne",
+      statusIsError: false,
+      aiApiKey: "",
+      aiBaseUrl: "https://api.openai.com/v1",
+      aiProxyUrl: "http://127.0.0.1:8787/v1/ai-match",
+      aiModel: "gpt-4.1-mini",
+      aiRememberKey: false,
+      aiReferenceImage: null,
+      aiReferenceName: "",
+      aiBusy: false
+    };
+
+    const translations = {
+      zh: {
+        refresh: "刷新",
+        empty: "图片预览会显示在这里。",
+        light: "光效",
+        exposure: "曝光",
+        contrast: "对比度",
+        highlights: "高光",
+        shadows: "阴影",
+        whites: "白色色阶",
+        blacks: "黑色色阶",
+        color: "颜色",
+        temperature: "色温",
+        tint: "色调",
+        vibrance: "自然饱和度",
+        saturation: "饱和度",
+        hue: "色相",
+        colorGrading: "颜色分级",
+        cgShadows: "阴影",
+        cgMidtones: "中间调",
+        cgHighlights: "高光",
+        cgBlending: "混合",
+        cgBalance: "平衡",
+        aiTitle: "AI 参考图调色",
+        apiKey: "API 密钥",
+        apiKeyPlaceholder: "例：sk-xxxxxxxxxxxxxxxx",
+        baseUrl: "Base URL",
+        baseUrlPlaceholder: "例：https://api.openai.com/v1",
+        proxyUrl: "代理地址",
+        proxyUrlPlaceholder: "例：http://127.0.0.1:8787/v1/ai-match",
+        aiModel: "模型",
+        aiModelPlaceholder: "例：gpt-4.1-mini",
+        opencodeConfig: "OpenCode",
+        opencodePlaceholder: "例：{ \"provider\": { \"openai\": { \"options\": { \"baseURL\": \"https://api.openai.com/v1\", \"apiKey\": \"sk-...\" } } } }",
+        importOpencode: "识别配置",
+        clearConfig: "清空配置",
+        rememberKey: "记住密钥",
+        referenceImage: "参考图",
+        chooseReference: "选择参考图",
+        aiMatch: "生成 AI 调色",
+        clearAi: "清除密钥",
+        aiHint: "密钥只用于本次请求；勾选记住后才会保存在本机。",
+        aiNeedKey: "请先输入 API 密钥。",
+        aiNeedReference: "请先选择一张参考图。",
+        aiNeedImage: "请先选择一个可预览的图片图层。",
+        aiAnalyzing: "AI 正在分析参考图风格...",
+        aiApplied: "AI 调色参数已生成，可以继续手动微调。",
+        aiFailed: "AI 分析失败，请检查密钥、网络或参考图后重试。",
+        aiProxyFailed: "本地代理不可用，正在尝试插件主线程请求...",
+        aiKeyCleared: "已清除本机保存的 API 密钥。",
+        aiReferenceReady: "参考图已选择。",
+        aiRememberWarning: "已在本机记住密钥，请只在自己的设备上使用。",
+        opencodeImported: "已从 OpenCode 配置识别 API 设置。",
+        opencodeInvalid: "OpenCode 配置不是有效 JSON，或没有找到 openai 配置。",
+        effects: "效果",
+        grain: "颗粒",
+        vignette: "暗角",
+        reset: "重置",
+        applying: "应用中",
+        imageLoaded: "图片已加载",
+        selectedLayer: "已选择图层",
+        image: "图片",
+        selectOne: "请选择一个图片图层。",
+        noPreview: "没有预览。",
+        noPreviewData: "没有预览数据。",
+        noDiagnostics: "没有诊断信息。",
+        readingPreview: "正在读取预览数据...",
+        sourceChanged: "图片来源已变化，参数已重置。",
+        ready: "可以开始调整。",
+        readyAgain: "可以继续调整。",
+        restored: "已恢复原图。",
+        resetClicked: "已点击重置，正在恢复原图...",
+        refreshClicked: "已点击刷新，正在重新读取选中图层。",
+        uiWaiting: "界面已加载，等待插件主程序...",
+        uiRefreshSent: "界面已加载，已请求读取选中图层。",
+        autoApplying: "正在自动应用...",
+        applyFailed: "应用失败。",
+        imageReadFailed: "图片读取失败。",
+        imageBytesMissing: "插件宿主没有返回图片数据。",
+        imageExportFailed: "图片导出失败。",
+        previewLoadFailed: "图片预览加载失败。"
+      },
+      en: {
+        refresh: "Refresh",
+        empty: "Image preview will appear here.",
+        light: "Light",
+        exposure: "Exposure",
+        contrast: "Contrast",
+        highlights: "Highlights",
+        shadows: "Shadows",
+        whites: "Whites",
+        blacks: "Blacks",
+        color: "Color",
+        temperature: "Temp",
+        tint: "Tint",
+        vibrance: "Vibrance",
+        saturation: "Saturation",
+        hue: "Hue",
+        colorGrading: "Color grading",
+        cgShadows: "Shadows",
+        cgMidtones: "Midtones",
+        cgHighlights: "Highlights",
+        cgBlending: "Blending",
+        cgBalance: "Balance",
+        aiTitle: "AI reference match",
+        apiKey: "API key",
+        apiKeyPlaceholder: "e.g. sk-xxxxxxxxxxxxxxxx",
+        baseUrl: "Base URL",
+        baseUrlPlaceholder: "e.g. https://api.openai.com/v1",
+        proxyUrl: "Proxy URL",
+        proxyUrlPlaceholder: "e.g. http://127.0.0.1:8787/v1/ai-match",
+        aiModel: "Model",
+        aiModelPlaceholder: "e.g. gpt-4.1-mini",
+        opencodeConfig: "OpenCode",
+        opencodePlaceholder: "e.g. { \"provider\": { \"openai\": { \"options\": { \"baseURL\": \"https://api.openai.com/v1\", \"apiKey\": \"sk-...\" } } } }",
+        importOpencode: "Import config",
+        clearConfig: "Clear config",
+        rememberKey: "Remember key",
+        referenceImage: "Reference",
+        chooseReference: "Choose reference",
+        aiMatch: "Generate AI look",
+        clearAi: "Clear key",
+        aiHint: "The key is only used for this request unless Remember key is enabled.",
+        aiNeedKey: "Enter an API key first.",
+        aiNeedReference: "Choose a reference image first.",
+        aiNeedImage: "Select a previewable image layer first.",
+        aiAnalyzing: "AI is analyzing the reference look...",
+        aiApplied: "AI tuning parameters generated. You can keep fine tuning.",
+        aiFailed: "AI analysis failed. Check the key, network, or reference image and retry.",
+        aiProxyFailed: "Local proxy unavailable. Trying plugin main request...",
+        aiKeyCleared: "Saved API key cleared from this device.",
+        aiReferenceReady: "Reference image selected.",
+        aiRememberWarning: "API key saved on this device. Use only on your own computer.",
+        opencodeImported: "API settings imported from OpenCode config.",
+        opencodeInvalid: "OpenCode config is not valid JSON or has no openai provider config.",
+        effects: "Effects",
+        grain: "Grain",
+        vignette: "Vignette",
+        reset: "Reset",
+        applying: "Applying",
+        imageLoaded: "Image loaded",
+        selectedLayer: "Selected layer",
+        image: "Image",
+        selectOne: "Select one image layer.",
+        noPreview: "No preview.",
+        noPreviewData: "No preview data.",
+        noDiagnostics: "No diagnostics.",
+        readingPreview: "Reading preview data...",
+        sourceChanged: "Image source changed. Params reset.",
+        ready: "Ready to tune.",
+        readyAgain: "Ready for another adjustment.",
+        restored: "Restored original image.",
+        resetClicked: "Reset clicked. Restoring original image...",
+        refreshClicked: "Refresh clicked. Sent refresh-selection.",
+        uiWaiting: "UI loaded. Waiting for plugin main...",
+        uiRefreshSent: "UI loaded. Sent refresh-selection.",
+        autoApplying: "Auto applying...",
+        applyFailed: "Apply failed.",
+        imageReadFailed: "Image read failed.",
+        imageBytesMissing: "No image bytes were received from the plugin host.",
+        imageExportFailed: "Image export failed.",
+        previewLoadFailed: "Preview image failed to load."
+      }
+    };
+
+    const statusEl = document.getElementById("status");
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    const exportCanvas = document.createElement("canvas");
+    const exportContext = exportCanvas.getContext("2d", { willReadFrequently: true });
+    const emptyEl = document.getElementById("empty");
+    const resetButton = document.getElementById("resetButton");
+    const refreshButton = document.getElementById("refreshButton");
+    const languageButton = document.getElementById("languageButton");
+    const apiKeyInput = document.getElementById("apiKeyInput");
+    const baseUrlInput = document.getElementById("baseUrlInput");
+    const proxyUrlInput = document.getElementById("proxyUrlInput");
+    const aiModelInput = document.getElementById("aiModelInput");
+    const opencodeConfigInput = document.getElementById("opencodeConfigInput");
+    const importOpencodeButton = document.getElementById("importOpencodeButton");
+    const clearOpencodeButton = document.getElementById("clearOpencodeButton");
+    const rememberKeyInput = document.getElementById("rememberKeyInput");
+    const referenceImageInput = document.getElementById("referenceImageInput");
+    const referenceImagePlaceholder = document.getElementById("referenceImagePlaceholder");
+    const referenceImagePreviewImg = document.getElementById("referenceImagePreviewImg");
+    const aiMatchButton = document.getElementById("aiMatchButton");
+    const clearAiButton = document.getElementById("clearAiButton");
+    const aiStatus = document.getElementById("aiStatus");
+    const debugEl = document.getElementById("debug");
+    const controls = Array.from(document.querySelectorAll("input[type='range']"));
+    const numericInputs = Array.from(document.querySelectorAll("[data-value-for]"));
+    const colorWheels = Array.from(document.querySelectorAll(".color-wheel"));
+    const resetParamButtons = Array.from(document.querySelectorAll("[data-reset-param]"));
+    const resetWheelButtons = Array.from(document.querySelectorAll("[data-reset-wheel]"));
+    const wheelChannelMap = {
+      shadows: { hue: "cgShadowsHue", saturation: "cgShadowsSaturation" },
+      midtones: { hue: "cgMidtonesHue", saturation: "cgMidtonesSaturation" },
+      highlights: { hue: "cgHighlightsHue", saturation: "cgHighlightsSaturation" }
+    };
+    const AI_KEY_STORAGE = "image-tuner-openai-api-key";
+    const AI_BASE_URL_STORAGE = "image-tuner-openai-base-url";
+    const AI_PROXY_URL_STORAGE = "image-tuner-ai-proxy-url";
+    const DEFAULT_AI_MODEL = "gpt-4.1-mini";
+    const DEFAULT_AI_BASE_URL = "https://api.openai.com/v1";
+    const DEFAULT_AI_PROXY_URL = "http://127.0.0.1:8787/v1/ai-match";
+    const PARAM_LIMITS = {
+      exposure: [-100, 100],
+      contrast: [-100, 100],
+      highlights: [-100, 100],
+      shadows: [-100, 100],
+      whites: [-100, 100],
+      blacks: [-100, 100],
+      temperature: [-100, 100],
+      tint: [-100, 100],
+      vibrance: [-100, 100],
+      saturation: [-100, 100],
+      hue: [-180, 180],
+      cgShadowsHue: [0, 360],
+      cgShadowsSaturation: [0, 100],
+      cgShadowsLuminance: [-100, 100],
+      cgMidtonesHue: [0, 360],
+      cgMidtonesSaturation: [0, 100],
+      cgMidtonesLuminance: [-100, 100],
+      cgHighlightsHue: [0, 360],
+      cgHighlightsSaturation: [0, 100],
+      cgHighlightsLuminance: [-100, 100],
+      cgBlending: [0, 100],
+      cgBalance: [-100, 100],
+      grain: [0, 100],
+      vignette: [-100, 100]
+    };
+
+    function t(key) {
+      const dictionary = translations[state.language] || translations.zh;
+      return dictionary[key] || translations.en[key] || key;
+    }
+
+    function translateErrorMessage(message) {
+      if (!message) return "";
+      if (translations.en[message] || translations.zh[message]) return t(message);
+      if (message.startsWith("previewLoadFailed ")) {
+        return message.replace("previewLoadFailed", t("previewLoadFailed"));
+      }
+      const exactMatches = {
+        "No image bytes were received from the plugin host.": "imageBytesMissing",
+        "Image export failed.": "imageExportFailed"
+      };
+      if (exactMatches[message]) return t(exactMatches[message]);
+      if (message.startsWith("Preview image failed to load.")) {
+        return message.replace("Preview image failed to load.", t("previewLoadFailed"));
+      }
+      if (message === "Apply failed.") return t("applyFailed");
+      if (message === "Image read failed.") return t("imageReadFailed");
+      return message;
+    }
+
+    function setLanguage(language) {
+      state.language = language === "en" ? "en" : "zh";
+      document.documentElement.lang = state.language === "zh" ? "zh-CN" : "en";
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        element.textContent = t(element.dataset.i18n);
+      });
+      languageButton.textContent = state.language === "zh" ? "EN" : "中文";
+      languageButton.setAttribute("aria-label", state.language === "zh" ? "Switch to English" : "切换到中文");
+      apiKeyInput.placeholder = t("apiKeyPlaceholder");
+      baseUrlInput.placeholder = t("baseUrlPlaceholder");
+      proxyUrlInput.placeholder = t("proxyUrlPlaceholder");
+      aiModelInput.placeholder = t("aiModelPlaceholder");
+      opencodeConfigInput.placeholder = t("opencodePlaceholder");
+      if (!state.aiBusy && !aiStatus.dataset.customMessage) aiStatus.textContent = t("aiHint");
+      if (!state.image && !state.statusIsError) emptyEl.textContent = t("empty");
+      setStatus(state.statusKey, state.statusIsError);
+    }
+
+    function post(message) {
+      parent.postMessage(message, "*");
+      parent.postMessage({ pluginMessage: message }, "*");
+    }
+
+    function clamp(value) {
+      return Math.max(0, Math.min(255, value));
+    }
+
+    function normalizeBytes(input) {
+      if (!input) return new Uint8Array();
+      if (input instanceof Uint8Array) return input;
+      if (input instanceof ArrayBuffer) return new Uint8Array(input);
+      if (Array.isArray(input)) return new Uint8Array(input);
+      if (input.buffer instanceof ArrayBuffer) return new Uint8Array(input.buffer);
+      if (typeof input === "string") {
+        const base64 = input.includes(",") ? input.split(",").pop() : input;
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+      }
+      return new Uint8Array();
+    }
+
+    function byteSignature(bytes) {
+      return Array.from(bytes.slice(0, 8)).map((value) => value.toString(16).padStart(2, "0")).join(" ");
+    }
+
+    function setStatus(message, isError = false) {
+      state.statusKey = message;
+      state.statusIsError = isError;
+      const translatedMessage = t(message) === message ? translateErrorMessage(message) : t(message);
+      statusEl.classList.toggle("error", isError);
+      statusEl.textContent = "";
+      if (isError) {
+        statusEl.textContent = translatedMessage;
+      } else {
+        const title = document.createElement("strong");
+        title.textContent = state.nodeName || t("imageLoaded");
+        statusEl.append(title);
+        if (translatedMessage) debugEl.textContent = translatedMessage;
+      }
+    }
+
+    function setControlsEnabled(enabled) {
+      controls.forEach((control) => { control.disabled = !enabled; });
+      numericInputs.forEach((input) => {
+        input.disabled = !enabled;
+        input.setAttribute("aria-disabled", enabled ? "false" : "true");
+      });
+      resetParamButtons.forEach((button) => { button.disabled = !enabled; });
+      resetWheelButtons.forEach((button) => { button.disabled = !enabled; });
+      colorWheels.forEach((wheel) => {
+        wheel.classList.toggle("disabled", !enabled);
+        wheel.setAttribute("aria-disabled", enabled ? "false" : "true");
+      });
+      resetButton.disabled = !enabled;
+      aiMatchButton.disabled = !enabled || state.aiBusy;
+    }
+
+    function updateOutputs() {
+      controls.forEach((control) => {
+        const input = document.querySelector(`[data-value-for="${control.id}"]`);
+        if (input && document.activeElement !== input) input.value = control.value;
+      });
+      updateColorWheels();
+    }
+
+    function resetValues() {
+      state.values = getDefaultValues();
+      controls.forEach((control) => { control.value = state.values[control.id]; });
+      updateOutputs();
+    }
+
+    function applyValueChange() {
+      state.editVersion += 1;
+      updateOutputs();
+      renderPreview();
+      scheduleAutoApply();
+    }
+
+    function resetParameter(param) {
+      const defaults = getDefaultValues();
+      if (!(param in defaults)) return;
+      state.values[param] = defaults[param];
+      const control = document.getElementById(param);
+      if (control) control.value = state.values[param];
+      applyValueChange();
+    }
+
+    function resetWheel(channel) {
+      const keys = wheelChannelMap[channel];
+      if (!keys) return;
+      state.values[keys.hue] = 0;
+      state.values[keys.saturation] = 0;
+      applyValueChange();
+    }
+
+    function clampToControl(control, value) {
+      const min = Number(control.min);
+      const max = Number(control.max);
+      const step = Number(control.step) || 1;
+      let next = Number.isFinite(value) ? value : Number(control.value) || 0;
+      if (Number.isFinite(min)) next = Math.max(min, next);
+      if (Number.isFinite(max)) next = Math.min(max, next);
+      if (step >= 1) next = Math.round(next);
+      return next;
+    }
+
+    function commitNumericInput(input) {
+      const control = document.getElementById(input.dataset.valueFor);
+      if (!control) return;
+      const raw = String(input.value).trim().replace(/[^\d.-]/g, "");
+      const parsed = Number(raw);
+      const next = clampToControl(control, parsed);
+      control.value = next;
+      input.value = next;
+      state.values[control.id] = next;
+      applyValueChange();
+    }
+
+    function cancelNumericInput(input) {
+      const control = document.getElementById(input.dataset.valueFor);
+      if (control) input.value = control.value;
+      input.blur();
+    }
+
+    function getDefaultValues() {
+      return {
+        exposure: 0,
+        contrast: 0,
+        highlights: 0,
+        shadows: 0,
+        whites: 0,
+        blacks: 0,
+        temperature: 0,
+        tint: 0,
+        vibrance: 0,
+        saturation: 0,
+        hue: 0,
+        cgShadowsHue: 0,
+        cgShadowsSaturation: 0,
+        cgShadowsLuminance: 0,
+        cgMidtonesHue: 0,
+        cgMidtonesSaturation: 0,
+        cgMidtonesLuminance: 0,
+        cgHighlightsHue: 0,
+        cgHighlightsSaturation: 0,
+        cgHighlightsLuminance: 0,
+        cgBlending: 50,
+        cgBalance: 0,
+        grain: 0,
+        vignette: 0
+      };
+    }
+
+    function setValues(values) {
+      const next = getDefaultValues();
+      Object.keys(next).forEach((key) => {
+        next[key] = Number(values && values[key]) || 0;
+      });
+      if (values && values.brightness && !next.exposure) {
+        next.exposure = Number(values.brightness) || 0;
+      }
+      state.values = next;
+      controls.forEach((control) => { control.value = state.values[control.id]; });
+      updateOutputs();
+    }
+
+    function setAiStatus(message, isError = false) {
+      aiStatus.dataset.customMessage = message ? "true" : "";
+      aiStatus.textContent = message ? (t(message) === message ? message : t(message)) : t("aiHint");
+      aiStatus.style.color = isError ? "var(--danger)" : "var(--muted)";
+    }
+
+    function normalizeBaseUrl(value) {
+      const raw = String(value || "").trim() || DEFAULT_AI_BASE_URL;
+      return raw.replace(/\/+$/, "");
+    }
+
+    function normalizeProxyUrl(value) {
+      const raw = String(value || "").trim() || DEFAULT_AI_PROXY_URL;
+      return raw.replace(/\/+$/, "");
+    }
+
+    function restoreSavedApiKey() {
+      state.aiModel = aiModelInput.value.trim() || DEFAULT_AI_MODEL;
+      state.aiBaseUrl = normalizeBaseUrl(baseUrlInput.value);
+      state.aiProxyUrl = normalizeProxyUrl(proxyUrlInput.value);
+      try {
+        const savedKey = localStorage.getItem(AI_KEY_STORAGE) || "";
+        const savedBaseUrl = localStorage.getItem(AI_BASE_URL_STORAGE) || "";
+        const savedProxyUrl = localStorage.getItem(AI_PROXY_URL_STORAGE) || "";
+        if (savedBaseUrl) {
+          state.aiBaseUrl = normalizeBaseUrl(savedBaseUrl);
+          baseUrlInput.value = state.aiBaseUrl;
+        }
+        if (savedProxyUrl) {
+          state.aiProxyUrl = normalizeProxyUrl(savedProxyUrl);
+          proxyUrlInput.value = state.aiProxyUrl;
+        }
+        if (!savedKey) return;
+        state.aiApiKey = savedKey;
+        state.aiRememberKey = true;
+        apiKeyInput.value = savedKey;
+        rememberKeyInput.checked = true;
+      } catch (error) {}
+    }
+
+    function persistApiKeyIfNeeded() {
+      state.aiApiKey = apiKeyInput.value.trim();
+      state.aiBaseUrl = normalizeBaseUrl(baseUrlInput.value);
+      state.aiProxyUrl = normalizeProxyUrl(proxyUrlInput.value);
+      baseUrlInput.value = state.aiBaseUrl;
+      proxyUrlInput.value = state.aiProxyUrl;
+      state.aiRememberKey = rememberKeyInput.checked;
+      try {
+        if (state.aiRememberKey && state.aiApiKey) {
+          localStorage.setItem(AI_KEY_STORAGE, state.aiApiKey);
+          localStorage.setItem(AI_BASE_URL_STORAGE, state.aiBaseUrl);
+          localStorage.setItem(AI_PROXY_URL_STORAGE, state.aiProxyUrl);
+          setAiStatus("aiRememberWarning");
+        } else {
+          localStorage.removeItem(AI_KEY_STORAGE);
+          localStorage.removeItem(AI_BASE_URL_STORAGE);
+          localStorage.removeItem(AI_PROXY_URL_STORAGE);
+        }
+      } catch (error) {}
+    }
+
+    function clearApiKey() {
+      state.aiApiKey = "";
+      state.aiRememberKey = false;
+      state.aiBaseUrl = DEFAULT_AI_BASE_URL;
+      state.aiProxyUrl = DEFAULT_AI_PROXY_URL;
+      state.aiModel = DEFAULT_AI_MODEL;
+      apiKeyInput.value = "";
+      baseUrlInput.value = "";
+      proxyUrlInput.value = "";
+      aiModelInput.value = "";
+      rememberKeyInput.checked = false;
+      try {
+        localStorage.removeItem(AI_KEY_STORAGE);
+        localStorage.removeItem(AI_BASE_URL_STORAGE);
+        localStorage.removeItem(AI_PROXY_URL_STORAGE);
+      } catch (error) {}
+      setAiStatus("aiKeyCleared");
+    }
+
+    function findOpenCodeProvider(config) {
+      const providers = config && config.provider && typeof config.provider === "object" ? config.provider : null;
+      if (!providers) return null;
+      if (providers.openai) return providers.openai;
+      const providerKeys = Object.keys(providers);
+      for (let i = 0; i < providerKeys.length; i += 1) {
+        const provider = providers[providerKeys[i]];
+        if (provider && provider.options && (provider.options.apiKey || provider.options.baseURL || provider.options.baseUrl)) {
+          return provider;
+        }
+      }
+      return null;
+    }
+
+    function chooseOpenCodeModel(modelKeys) {
+      if (!modelKeys.length) return "";
+      return modelKeys.find((model) => /mini|small|lite/i.test(model)) || modelKeys[0];
+    }
+
+    function importOpenCodeConfig() {
+      try {
+        const raw = opencodeConfigInput.value.trim();
+        if (!raw) throw new Error("empty");
+        const config = JSON.parse(raw);
+        const provider = findOpenCodeProvider(config);
+        if (!provider) throw new Error("provider missing");
+        const options = provider.options || {};
+        const apiKey = options.apiKey || options.api_key || "";
+        const baseUrl = options.baseURL || options.baseUrl || options.base_url || "";
+        const modelKeys = provider.models && typeof provider.models === "object" ? Object.keys(provider.models) : [];
+        if (!apiKey && !baseUrl && !modelKeys.length) throw new Error("openai options missing");
+        if (apiKey) {
+          state.aiApiKey = String(apiKey).trim();
+          apiKeyInput.value = state.aiApiKey;
+        }
+        if (baseUrl) {
+          state.aiBaseUrl = normalizeBaseUrl(baseUrl);
+          baseUrlInput.value = state.aiBaseUrl;
+        }
+        if (modelKeys.length) {
+          state.aiModel = chooseOpenCodeModel(modelKeys);
+          aiModelInput.value = state.aiModel;
+        }
+        persistApiKeyIfNeeded();
+        setAiStatus("opencodeImported");
+      } catch (error) {
+        setAiStatus("opencodeInvalid", true);
+      }
+    }
+
+    function fileToDataUrl(file, maxEdge = 900, quality = 0.86) {
+      return new Promise((resolve, reject) => {
+        if (!file) {
+          reject(new Error("missing file"));
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const image = new Image();
+          image.onload = () => {
+            const sourceWidth = image.naturalWidth || image.width;
+            const sourceHeight = image.naturalHeight || image.height;
+            const scale = Math.min(1, maxEdge / Math.max(sourceWidth, sourceHeight));
+            const tempCanvas = document.createElement("canvas");
+            tempCanvas.width = Math.max(1, Math.round(sourceWidth * scale));
+            tempCanvas.height = Math.max(1, Math.round(sourceHeight * scale));
+            const tempContext = tempCanvas.getContext("2d");
+            tempContext.drawImage(image, 0, 0, tempCanvas.width, tempCanvas.height);
+            resolve(tempCanvas.toDataURL("image/jpeg", quality));
+          };
+          image.onerror = () => reject(new Error("reference image load failed"));
+          image.src = reader.result;
+        };
+        reader.onerror = () => reject(new Error("reference image read failed"));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function currentImageToDataUrl(maxEdge = 900, quality = 0.86) {
+      if (!state.image) return "";
+      const sourceWidth = state.image.naturalWidth || state.image.width;
+      const sourceHeight = state.image.naturalHeight || state.image.height;
+      const scale = Math.min(1, maxEdge / Math.max(sourceWidth, sourceHeight));
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = Math.max(1, Math.round(sourceWidth * scale));
+      tempCanvas.height = Math.max(1, Math.round(sourceHeight * scale));
+      const tempContext = tempCanvas.getContext("2d");
+      tempContext.drawImage(state.image, 0, 0, tempCanvas.width, tempCanvas.height);
+      return tempCanvas.toDataURL("image/jpeg", quality);
+    }
+
+    function parameterSchemaProperties() {
+      const properties = {};
+      Object.keys(getDefaultValues()).forEach((key) => {
+        const limits = PARAM_LIMITS[key] || [-100, 100];
+        properties[key] = {
+          type: "number",
+          minimum: limits[0],
+          maximum: limits[1]
+        };
+      });
+      return properties;
+    }
+
+    function sanitizeAiParams(params) {
+      const defaults = getDefaultValues();
+      const next = {};
+      Object.keys(defaults).forEach((key) => {
+        const control = document.getElementById(key);
+        const value = Number(params && params[key]);
+        if (control) {
+          next[key] = clampToControl(control, value);
+        } else {
+          const limits = PARAM_LIMITS[key] || [-100, 100];
+          const safeValue = Number.isFinite(value) ? value : defaults[key];
+          next[key] = Math.round(Math.max(limits[0], Math.min(limits[1], safeValue)));
+        }
+      });
+      return next;
+    }
+
+    function applyAiResult(result) {
+      const nextParams = sanitizeAiParams(result && result.params);
+      setValues(nextParams);
+      applyValueChange();
+      setAiStatus(result && result.summary ? result.summary : "aiApplied");
+    }
+
+    async function requestAiMatchThroughProxy(payload) {
+      const response = await fetch(state.aiProxyUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = data && data.error ? data.error : `${response.status} ${response.statusText}`;
+        throw new Error(message);
+      }
+      return data;
+    }
+
+    async function requestAiMatch() {
+      persistApiKeyIfNeeded();
+      state.aiBaseUrl = normalizeBaseUrl(baseUrlInput.value);
+      state.aiModel = aiModelInput.value.trim() || DEFAULT_AI_MODEL;
+      if (!state.aiApiKey) {
+        setAiStatus("aiNeedKey", true);
+        return;
+      }
+      if (!state.aiReferenceImage) {
+        setAiStatus("aiNeedReference", true);
+        return;
+      }
+      if (!state.image) {
+        setAiStatus("aiNeedImage", true);
+        return;
+      }
+
+      state.aiBusy = true;
+      aiMatchButton.disabled = true;
+      setAiStatus("aiAnalyzing");
+
+      try {
+        const targetDataUrl = currentImageToDataUrl();
+        const payload = {
+          type: "ai-match",
+          apiKey: state.aiApiKey,
+          baseUrl: state.aiBaseUrl,
+          model: state.aiModel,
+          targetDataUrl,
+          referenceDataUrl: state.aiReferenceImage,
+          schemaProperties: parameterSchemaProperties(),
+          parameterKeys: Object.keys(getDefaultValues())
+        };
+        try {
+          const proxyResult = await requestAiMatchThroughProxy(payload);
+          state.aiBusy = false;
+          aiMatchButton.disabled = !state.image;
+          applyAiResult(proxyResult);
+          return;
+        } catch (proxyError) {
+          setAiStatus("aiProxyFailed");
+        }
+        post(payload);
+      } catch (error) {
+        setAiStatus(error && error.message ? error.message : "aiFailed", true);
+        state.aiBusy = false;
+        aiMatchButton.disabled = !state.image;
+      }
+    }
+
+    function hueToRgb(hue, saturation) {
+      const chroma = saturation / 100;
+      const h = ((hue % 360) + 360) % 360 / 60;
+      const x = chroma * (1 - Math.abs((h % 2) - 1));
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      if (h < 1) [r, g, b] = [chroma, x, 0];
+      else if (h < 2) [r, g, b] = [x, chroma, 0];
+      else if (h < 3) [r, g, b] = [0, chroma, x];
+      else if (h < 4) [r, g, b] = [0, x, chroma];
+      else if (h < 5) [r, g, b] = [x, 0, chroma];
+      else [r, g, b] = [chroma, 0, x];
+      const match = 1 - chroma;
+      return [(r + match) * 255, (g + match) * 255, (b + match) * 255];
+    }
+
+    function drawColorWheelCanvas(canvasElement) {
+      const size = canvasElement.width;
+      const radius = size / 2;
+      const context2d = canvasElement.getContext("2d");
+      const imageData = context2d.createImageData(size, size);
+      const data = imageData.data;
+      for (let y = 0; y < size; y += 1) {
+        for (let x = 0; x < size; x += 1) {
+          const dx = x + 0.5 - radius;
+          const dy = y + 0.5 - radius;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const index = (y * size + x) * 4;
+          if (distance > radius - 1) {
+            data[index + 3] = 0;
+            continue;
+          }
+          const hue = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
+          const saturationValue = Math.max(0, Math.min(100, distance / (radius - 1) * 100));
+          const [r, g, b] = hueToRgb(hue, saturationValue);
+          data[index] = r;
+          data[index + 1] = g;
+          data[index + 2] = b;
+          data[index + 3] = 255;
+        }
+      }
+      context2d.putImageData(imageData, 0, 0);
+    }
+
+    function drawColorWheels() {
+      colorWheels.forEach((wheel) => {
+        const wheelCanvas = wheel.querySelector(".color-wheel-canvas");
+        if (wheelCanvas) drawColorWheelCanvas(wheelCanvas);
+      });
+    }
+
+    function updateColorWheels() {
+      colorWheels.forEach((wheel) => {
+        const channel = wheel.dataset.wheel;
+        const keys = wheelChannelMap[channel];
+        if (!keys) return;
+        const hue = Number(state.values[keys.hue]) || 0;
+        const saturationValue = Number(state.values[keys.saturation]) || 0;
+        const angle = (hue - 90) * Math.PI / 180;
+        const wheelRadius = wheel.clientWidth / 2 - 7;
+        const radius = Math.max(0, Math.min(1, saturationValue / 100)) * wheelRadius;
+        const handle = wheel.querySelector(".wheel-handle");
+        if (handle) {
+          const [r, g, b] = hueToRgb(hue, saturationValue);
+          handle.style.left = `${wheel.clientWidth / 2 + Math.cos(angle) * radius}px`;
+          handle.style.top = `${wheel.clientHeight / 2 + Math.sin(angle) * radius}px`;
+          handle.style.background = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+        }
+        wheel.setAttribute("aria-valuetext", `Hue ${Math.round(hue)}, Saturation ${Math.round(saturationValue)}`);
+        const meta = document.querySelector(`[data-wheel-meta="${channel}"]`);
+        if (meta) meta.textContent = `H ${Math.round(hue)} / S ${Math.round(saturationValue)}`;
+      });
+    }
+
+    function setWheelValue(wheel, clientX, clientY) {
+      if (wheel.getAttribute("aria-disabled") === "true") return;
+      const channel = wheel.dataset.wheel;
+      const keys = wheelChannelMap[channel];
+      if (!keys) return;
+      const rect = wheel.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = clientX - cx;
+      const dy = clientY - cy;
+      const maxRadius = rect.width / 2 - 7;
+      const distance = Math.min(maxRadius, Math.sqrt(dx * dx + dy * dy));
+      const hue = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
+      const saturationValue = Math.round(distance / maxRadius * 100);
+      state.values[keys.hue] = Math.round(hue);
+      state.values[keys.saturation] = saturationValue;
+      applyValueChange();
+    }
+
+    function hueRotate(r, g, b, degrees) {
+      const angle = degrees * Math.PI / 180;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return [
+        r * (0.213 + cos * 0.787 - sin * 0.213) + g * (0.715 - cos * 0.715 - sin * 0.715) + b * (0.072 - cos * 0.072 + sin * 0.928),
+        r * (0.213 - cos * 0.213 + sin * 0.143) + g * (0.715 + cos * 0.285 + sin * 0.140) + b * (0.072 - cos * 0.072 - sin * 0.283),
+        r * (0.213 - cos * 0.213 - sin * 0.787) + g * (0.715 - cos * 0.715 + sin * 0.715) + b * (0.072 + cos * 0.928 + sin * 0.072)
+      ];
+    }
+
+    function applyTone(value, luminance) {
+      let result = value;
+      const exposure = state.values.exposure * 2.25;
+      const highlightWeight = smoothstep(0.45, 1, luminance);
+      const shadowWeight = 1 - smoothstep(0, 0.55, luminance);
+      const whiteWeight = smoothstep(0.72, 1, luminance);
+      const blackWeight = 1 - smoothstep(0, 0.28, luminance);
+
+      result += exposure;
+      result += state.values.highlights * 1.25 * highlightWeight;
+      result += state.values.shadows * 1.25 * shadowWeight;
+      result += state.values.whites * 1.1 * whiteWeight;
+      result += state.values.blacks * 1.1 * blackWeight;
+      return result;
+    }
+
+    function smoothstep(edge0, edge1, value) {
+      const x = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
+      return x * x * (3 - 2 * x);
+    }
+
+    function pseudoRandom(x, y) {
+      const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+      return seed - Math.floor(seed);
+    }
+
+    function getGradingWeights(luminance) {
+      const blending = Math.max(0, Math.min(100, state.values.cgBlending)) / 100;
+      const balance = Math.max(-100, Math.min(100, state.values.cgBalance)) / 100;
+      const spread = 0.16 + blending * 0.28;
+      const shadowCenter = 0.18 + balance * 0.18;
+      const highlightCenter = 0.82 + balance * 0.18;
+      const midCenter = 0.5 + balance * 0.08;
+      const shadow = Math.max(0, 1 - Math.abs(luminance - shadowCenter) / (spread + 0.18));
+      const midtone = Math.max(0, 1 - Math.abs(luminance - midCenter) / (spread + 0.12));
+      const highlight = Math.max(0, 1 - Math.abs(luminance - highlightCenter) / (spread + 0.18));
+      const total = shadow + midtone + highlight || 1;
+      return {
+        shadows: shadow / total,
+        midtones: midtone / total,
+        highlights: highlight / total
+      };
+    }
+
+    function applyGradeChannel(r, g, b, weight, hue, saturationValue, luminanceValue) {
+      if (weight <= 0) return [r, g, b];
+      const amount = saturationValue / 100 * weight;
+      const [tr, tg, tb] = hueToRgb(hue, 100);
+      const lift = luminanceValue * 1.4 * weight;
+      return [
+        r + (tr - 128) * amount * 0.55 + lift,
+        g + (tg - 128) * amount * 0.55 + lift,
+        b + (tb - 128) * amount * 0.55 + lift
+      ];
+    }
+
+    function applyColorGrading(r, g, b, luminance) {
+      const weights = getGradingWeights(luminance);
+      [r, g, b] = applyGradeChannel(
+        r, g, b,
+        weights.shadows,
+        state.values.cgShadowsHue,
+        state.values.cgShadowsSaturation,
+        state.values.cgShadowsLuminance
+      );
+      [r, g, b] = applyGradeChannel(
+        r, g, b,
+        weights.midtones,
+        state.values.cgMidtonesHue,
+        state.values.cgMidtonesSaturation,
+        state.values.cgMidtonesLuminance
+      );
+      [r, g, b] = applyGradeChannel(
+        r, g, b,
+        weights.highlights,
+        state.values.cgHighlightsHue,
+        state.values.cgHighlightsSaturation,
+        state.values.cgHighlightsLuminance
+      );
+      return [r, g, b];
+    }
+
+    function applyColorAdjustments(imageData) {
+      const data = imageData.data;
+      const contrast = (259 * (state.values.contrast + 255)) / (255 * (259 - state.values.contrast));
+      const saturation = 1 + state.values.saturation / 100;
+      const hue = state.values.hue;
+      const temp = state.values.temperature;
+      const tint = state.values.tint;
+      const vibrance = state.values.vibrance / 100;
+      const grainAmount = state.values.grain * 0.55;
+      const vignetteAmount = state.values.vignette / 100;
+      const width = imageData.width;
+      const height = imageData.height;
+      const cx = width / 2;
+      const cy = height / 2;
+      const maxDistance = Math.sqrt(cx * cx + cy * cy);
+
+      for (let i = 0; i < data.length; i += 4) {
+        const pixel = i / 4;
+        const x = pixel % width;
+        const y = Math.floor(pixel / width);
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
+        const originalGray = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255;
+
+        r = applyTone(r, originalGray);
+        g = applyTone(g, originalGray);
+        b = applyTone(b, originalGray);
+
+        r += temp * 0.8 + tint * 0.15;
+        g += -tint * 0.65;
+        b += -temp * 0.8 + tint * 0.15;
+
+        [r, g, b] = hueRotate(r, g, b, hue);
+        r = contrast * (r - 128) + 128;
+        g = contrast * (g - 128) + 128;
+        b = contrast * (b - 128) + 128;
+
+        const gray = r * 0.2126 + g * 0.7152 + b * 0.0722;
+        const maxChannel = Math.max(r, g, b);
+        const minChannel = Math.min(r, g, b);
+        const currentSat = maxChannel > 0 ? (maxChannel - minChannel) / maxChannel : 0;
+        const vibranceFactor = 1 + vibrance * (1 - currentSat) * 1.4;
+        let finalSaturation = saturation * vibranceFactor;
+
+        r = gray + (r - gray) * finalSaturation;
+        g = gray + (g - gray) * finalSaturation;
+        b = gray + (b - gray) * finalSaturation;
+
+        const gradedGray = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255;
+        [r, g, b] = applyColorGrading(r, g, b, gradedGray);
+
+        if (grainAmount > 0) {
+          const noise = (pseudoRandom(x, y) - 0.5) * grainAmount;
+          r += noise;
+          g += noise;
+          b += noise;
+        }
+
+        if (vignetteAmount !== 0) {
+          const dx = x - cx;
+          const dy = y - cy;
+          const distance = Math.sqrt(dx * dx + dy * dy) / maxDistance;
+          const vignetteWeight = smoothstep(0.2, 0.95, distance);
+          const vignette = 1 + vignetteAmount * vignetteWeight;
+          r *= vignette;
+          g *= vignette;
+          b *= vignette;
+        }
+
+        data[i] = clamp(r);
+        data[i + 1] = clamp(g);
+        data[i + 2] = clamp(b);
+      }
+
+      return imageData;
+    }
+
+    function renderPreview() {
+      if (!state.image) return;
+      const token = ++state.renderToken;
+      requestAnimationFrame(() => {
+        if (token !== state.renderToken) return;
+        const sourceWidth = state.image.naturalWidth || state.image.width;
+        const sourceHeight = state.image.naturalHeight || state.image.height;
+        const maxPreviewEdge = 720;
+        const scale = Math.min(1, maxPreviewEdge / Math.max(sourceWidth, sourceHeight));
+        canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+        canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(state.image, 0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        context.putImageData(applyColorAdjustments(imageData), 0, 0);
+      });
+    }
+
+    function renderExport() {
+      const sourceWidth = state.image.naturalWidth || state.image.width;
+      const sourceHeight = state.image.naturalHeight || state.image.height;
+      exportCanvas.width = sourceWidth;
+      exportCanvas.height = sourceHeight;
+      exportContext.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
+      exportContext.drawImage(state.image, 0, 0);
+      const imageData = exportContext.getImageData(0, 0, exportCanvas.width, exportCanvas.height);
+      exportContext.putImageData(applyColorAdjustments(imageData), 0, 0);
+    }
+
+    function loadImageFromBytes(rawBytes) {
+      return new Promise((resolve, reject) => {
+        const bytes = normalizeBytes(rawBytes);
+        debugEl.textContent = `mode=${state.mode}, bytes=${bytes.length}, sig=${byteSignature(bytes)}`;
+
+        if (!bytes.length) {
+          reject(new Error("imageBytesMissing"));
+          return;
+        }
+
+        const blob = new Blob([bytes], { type: "image/png" });
+        const url = URL.createObjectURL(blob);
+        const image = new Image();
+        image.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(image);
+        };
+        image.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error(`previewLoadFailed bytes=${bytes.length}, sig=${byteSignature(bytes)}`));
+        };
+        image.src = url;
+      });
+    }
+
+    function canvasToBytes() {
+      return new Promise((resolve, reject) => {
+        exportCanvas.toBlob(async (blob) => {
+          if (!blob) {
+            reject(new Error("imageExportFailed"));
+            return;
+          }
+          resolve(new Uint8Array(await blob.arrayBuffer()));
+        }, "image/png", 0.96);
+      });
+    }
+
+    async function sendApply(mode = "auto") {
+      if (!state.image || state.isApplying) {
+        if (mode === "auto") state.queuedAutoApply = true;
+        return;
+      }
+
+      const applyVersion = state.editVersion;
+      state.isApplying = true;
+      state.applyingVersion = applyVersion;
+
+      try {
+        renderExport();
+        const bytes = await canvasToBytes();
+        state.pendingAppliedBytes = bytes;
+        debugEl.textContent = t("autoApplying");
+        post({ type: "apply-image", bytes, params: state.values, mode, version: applyVersion });
+      } catch (error) {
+        state.isApplying = false;
+        setStatus(error.message || "applyFailed", true);
+      }
+    }
+
+    function scheduleAutoApply() {
+      window.clearTimeout(state.autoApplyTimer);
+      state.autoApplyTimer = window.setTimeout(() => {
+        sendApply("auto");
+      }, 350);
+    }
+
+    controls.forEach((control) => {
+      control.addEventListener("input", () => {
+        state.values[control.id] = Number(control.value);
+        applyValueChange();
+      });
+    });
+
+    numericInputs.forEach((input) => {
+      input.addEventListener("focus", () => {
+        input.select();
+      });
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commitNumericInput(input);
+          input.blur();
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          cancelNumericInput(input);
+        }
+      });
+      input.addEventListener("blur", () => {
+        commitNumericInput(input);
+      });
+    });
+
+    resetParamButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        resetParameter(button.dataset.resetParam);
+      });
+    });
+
+    resetWheelButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        resetWheel(button.dataset.resetWheel);
+      });
+    });
+
+    apiKeyInput.addEventListener("input", () => {
+      state.aiApiKey = apiKeyInput.value.trim();
+      if (!state.aiRememberKey) {
+        try {
+          localStorage.removeItem(AI_KEY_STORAGE);
+        } catch (error) {}
+      }
+    });
+
+    baseUrlInput.addEventListener("change", () => {
+      state.aiBaseUrl = normalizeBaseUrl(baseUrlInput.value);
+      baseUrlInput.value = state.aiBaseUrl;
+      persistApiKeyIfNeeded();
+    });
+
+    proxyUrlInput.addEventListener("change", () => {
+      state.aiProxyUrl = normalizeProxyUrl(proxyUrlInput.value);
+      proxyUrlInput.value = state.aiProxyUrl;
+      persistApiKeyIfNeeded();
+    });
+
+    aiModelInput.addEventListener("input", () => {
+      state.aiModel = aiModelInput.value.trim() || DEFAULT_AI_MODEL;
+    });
+
+    importOpencodeButton.addEventListener("click", () => {
+      importOpenCodeConfig();
+    });
+
+    clearOpencodeButton.addEventListener("click", () => {
+      opencodeConfigInput.value = "";
+      setAiStatus("");
+    });
+
+    rememberKeyInput.addEventListener("change", () => {
+      persistApiKeyIfNeeded();
+      if (!rememberKeyInput.checked) setAiStatus("");
+    });
+
+    referenceImageInput.addEventListener("change", async () => {
+      const file = referenceImageInput.files && referenceImageInput.files[0];
+      if (!file) {
+        state.aiReferenceImage = null;
+        state.aiReferenceName = "";
+        referenceImagePreviewImg.removeAttribute("src");
+        referenceImagePreviewImg.hidden = true;
+        referenceImagePlaceholder.hidden = false;
+        return;
+      }
+      try {
+        state.aiReferenceImage = await fileToDataUrl(file);
+        state.aiReferenceName = file.name;
+        referenceImagePreviewImg.src = state.aiReferenceImage;
+        referenceImagePreviewImg.hidden = false;
+        referenceImagePlaceholder.hidden = true;
+        setAiStatus("aiReferenceReady");
+      } catch (error) {
+        state.aiReferenceImage = null;
+        state.aiReferenceName = "";
+        referenceImagePreviewImg.removeAttribute("src");
+        referenceImagePreviewImg.hidden = true;
+        referenceImagePlaceholder.hidden = false;
+        setAiStatus(error && error.message ? error.message : "aiFailed", true);
+      }
+    });
+
+    aiMatchButton.addEventListener("click", () => {
+      requestAiMatch();
+    });
+
+    clearAiButton.addEventListener("click", () => {
+      clearApiKey();
+    });
+
+    colorWheels.forEach((wheel) => {
+      let dragging = false;
+      wheel.addEventListener("pointerdown", (event) => {
+        dragging = true;
+        wheel.setPointerCapture(event.pointerId);
+        setWheelValue(wheel, event.clientX, event.clientY);
+      });
+      wheel.addEventListener("pointermove", (event) => {
+        if (!dragging) return;
+        setWheelValue(wheel, event.clientX, event.clientY);
+      });
+      wheel.addEventListener("pointerup", (event) => {
+        dragging = false;
+        if (wheel.hasPointerCapture(event.pointerId)) wheel.releasePointerCapture(event.pointerId);
+      });
+      wheel.addEventListener("pointercancel", () => {
+        dragging = false;
+      });
+      wheel.addEventListener("keydown", (event) => {
+        if (wheel.getAttribute("aria-disabled") === "true") return;
+        const channel = wheel.dataset.wheel;
+        const keys = wheelChannelMap[channel];
+        if (!keys) return;
+        let handled = true;
+        if (event.key === "ArrowLeft") state.values[keys.hue] = (state.values[keys.hue] + 359) % 360;
+        else if (event.key === "ArrowRight") state.values[keys.hue] = (state.values[keys.hue] + 1) % 360;
+        else if (event.key === "ArrowDown") state.values[keys.saturation] = Math.max(0, state.values[keys.saturation] - 1);
+        else if (event.key === "ArrowUp") state.values[keys.saturation] = Math.min(100, state.values[keys.saturation] + 1);
+        else handled = false;
+        if (!handled) return;
+        event.preventDefault();
+        applyValueChange();
+      });
+    });
+
+    resetButton.addEventListener("click", () => {
+      window.clearTimeout(state.autoApplyTimer);
+      state.queuedAutoApply = false;
+      resetValues();
+      renderPreview();
+      debugEl.textContent = t("resetClicked");
+      post({ type: "reset-image" });
+    });
+
+    refreshButton.addEventListener("click", () => {
+      debugEl.textContent = t("refreshClicked");
+      post({ type: "refresh-selection" });
+    });
+
+    languageButton.addEventListener("click", () => {
+      setLanguage(state.language === "zh" ? "en" : "zh");
+    });
+
+    window.onmessage = async (event) => {
+      const message = event.data && event.data.pluginMessage ? event.data.pluginMessage : event.data;
+      if (!message || !message.type) return;
+
+      if (message.type === "selection-error") {
+        state.image = null;
+        state.nodeName = "";
+        state.mode = "none";
+        canvas.hidden = true;
+        emptyEl.hidden = false;
+        emptyEl.textContent = translateErrorMessage(message.message) || t("noPreview");
+        debugEl.textContent = t("noPreviewData");
+        setStatus(message.message || "noPreview", true);
+        setControlsEnabled(false);
+        return;
+      }
+
+      if (message.type === "selection-status") {
+        debugEl.textContent = message.detail || t("noDiagnostics");
+        if (!message.ok && message.source === "apply") {
+          state.isApplying = false;
+        }
+        if (message.ok) {
+          state.nodeName = message.title || t("selectedLayer");
+          setStatus("readingPreview");
+        } else {
+          state.image = null;
+          state.nodeName = "";
+          state.mode = "none";
+          canvas.hidden = true;
+          emptyEl.hidden = false;
+          emptyEl.textContent = message.title || t("noPreview");
+          setStatus(message.title || "noPreview", true);
+          setControlsEnabled(false);
+        }
+        return;
+      }
+
+      if (message.type === "selection-image") {
+        try {
+          state.nodeName = message.nodeName || t("image");
+          state.mode = message.mode || "unknown";
+          state.image = await loadImageFromBytes(message.bytes);
+          setValues(message.params);
+          canvas.hidden = false;
+          emptyEl.hidden = true;
+          setStatus(message.sourceChanged ? "sourceChanged" : "ready");
+          setControlsEnabled(true);
+          renderPreview();
+        } catch (error) {
+        state.image = null;
+        canvas.hidden = true;
+        emptyEl.hidden = false;
+          emptyEl.textContent = translateErrorMessage(error.message) || t("imageReadFailed");
+          setStatus(error.message || "imageReadFailed", true);
+        setControlsEnabled(false);
+      }
+      }
+
+      if (message.type === "apply-complete") {
+        const isCurrentApply = message.version === state.applyingVersion && message.version === state.editVersion;
+        state.isApplying = false;
+        if (isCurrentApply) {
+          setValues(message.params || state.values);
+        }
+        debugEl.textContent = message.detail || t("readyAgain");
+        setStatus(isCurrentApply ? "readyAgain" : "autoApplying");
+        setControlsEnabled(true);
+        if (isCurrentApply) renderPreview();
+        if (state.queuedAutoApply) {
+          state.queuedAutoApply = false;
+          scheduleAutoApply();
+        }
+      }
+
+      if (message.type === "reset-complete") {
+        state.pendingAppliedBytes = null;
+        state.isApplying = false;
+        state.queuedAutoApply = false;
+        window.clearTimeout(state.autoApplyTimer);
+        setValues(message.params);
+        debugEl.textContent = message.detail || t("restored");
+        setStatus("restored");
+        setControlsEnabled(true);
+      }
+
+      if (message.type === "ai-match-complete") {
+        state.aiBusy = false;
+        aiMatchButton.disabled = !state.image;
+        applyAiResult(message);
+      }
+
+      if (message.type === "ai-match-error") {
+        state.aiBusy = false;
+        aiMatchButton.disabled = !state.image;
+        setAiStatus(message.message || "aiFailed", true);
+      }
+    };
+
+    restoreSavedApiKey();
+    setControlsEnabled(false);
+    drawColorWheels();
+    updateOutputs();
+    setLanguage("zh");
+    debugEl.textContent = t("uiRefreshSent");
+    post({ type: "refresh-selection" });
+  </script>
+</body>
+</html>
+
+
+
