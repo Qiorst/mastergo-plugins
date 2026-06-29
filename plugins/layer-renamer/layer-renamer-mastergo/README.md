@@ -19,7 +19,7 @@ MasterGo plugin for batch renaming selected layers with a preview-first template
 ## Files
 
 ```text
-layer-renamer/mastergo/
+layer-renamer/layer-renamer-mastergo/
   manifest.json
   code.js
   ui.html
@@ -29,7 +29,7 @@ layer-renamer/mastergo/
 
 ## How to test
 
-1. Import `plugins/layer-renamer/mastergo/manifest.json` in MasterGo plugin manager.
+1. Import `plugins/layer-renamer/layer-renamer-mastergo/manifest.json` in MasterGo plugin manager.
 2. Select multiple layers in a document.
 3. Run Layer Renamer.
 4. Confirm the panel shows the selected layer count and a rename preview.

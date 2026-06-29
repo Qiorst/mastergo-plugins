@@ -6,7 +6,7 @@ Layer Renamer batch-renames selected design layers with template tokens, numberi
 
 | Platform | Import Manifest | Notes |
 | --- | --- | --- |
-| MasterGo | `plugins/layer-renamer/mastergo/manifest.json` | First release. Uses MasterGo-compatible host detection and selection access. |
+| MasterGo | `plugins/layer-renamer/layer-renamer-mastergo/manifest.json` | First release. Uses MasterGo-compatible host detection and selection access. |
 
 ## Features
 

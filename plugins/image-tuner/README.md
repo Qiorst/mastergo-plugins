@@ -6,8 +6,8 @@ Image Tuner adjusts selected image layers with Camera Raw style controls for lig
 
 | Platform | Import Manifest | Notes |
 | --- | --- | --- |
-| MasterGo | `plugins/image-tuner/mastergo/manifest.json` | Uses the MasterGo-oriented runtime and compatibility helpers. |
-| Figma | `plugins/image-tuner/figma/manifest.json` | Uses Figma-native `imageHash` APIs. |
+| MasterGo | `plugins/image-tuner/image-tuner-mastergo/manifest.json` | Uses the MasterGo-oriented runtime and compatibility helpers. |
+| Figma | `plugins/image-tuner/image-tuner-figma/manifest.json` | Uses Figma-native `imageHash` APIs. |
 
 ## Features
 

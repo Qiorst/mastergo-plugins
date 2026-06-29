@@ -22,8 +22,8 @@ plugins/
 
 | Plugin | MasterGo | Figma |
 | --- | --- | --- |
-| Image Tuner | `plugins/image-tuner/mastergo/manifest.json` | `plugins/image-tuner/figma/manifest.json` |
-| Layer Renamer | `plugins/layer-renamer/mastergo/manifest.json` | - |
+| Image Tuner | `plugins/image-tuner/image-tuner-mastergo/manifest.json` | `plugins/image-tuner/image-tuner-figma/manifest.json` |
+| Layer Renamer | `plugins/layer-renamer/layer-renamer-mastergo/manifest.json` | - |
 
 ## Version Tags
 
