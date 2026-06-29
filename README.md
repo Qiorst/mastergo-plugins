@@ -1,28 +1,28 @@
 # Figma / MasterGo Plugins
 
-This repository stores Figma and MasterGo plugins in separate folders. Platform-specific versions live side by side so each editor can import its own `manifest.json`.
+This repository stores Figma and MasterGo plugins in a product-first structure. Each plugin has one product folder, and each platform version lives under that product.
+
+## Structure
+
+```text
+plugins/
+  plugin-name/
+    README.md
+    mastergo/
+      manifest.json
+      code.js
+      ui.html
+    figma/
+      manifest.json
+      code.js
+      ui.html
+```
 
 ## Plugins
 
-### Image Tuner
-
-MasterGo version:
-
-`plugins/image-tuner-mastergo/manifest.json`
-
-Figma version:
-
-`plugins/image-tuner-figma/manifest.json`
-
-Features:
-
-- Preview selected image layers.
-- Adjust Light, Color, Color Grading, and Effects parameters.
-- Apply tuned images back to the selected layer.
-- Preserve original image source for reset.
-- Reset parameters and restore the original image.
-- Detect external image source changes and reset parameters automatically.
-- Optionally generate tuning parameters from a reference image through a local AI proxy.
+| Plugin | MasterGo | Figma |
+| --- | --- | --- |
+| Image Tuner | `plugins/image-tuner/mastergo/manifest.json` | `plugins/image-tuner/figma/manifest.json` |
 
 ## Version Tags
 
